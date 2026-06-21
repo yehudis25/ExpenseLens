@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+
+.streamlit/secrets.toml
+
+.env
+
+*.db
+
+ollama.log
+
+.ipynb_checkpoints/

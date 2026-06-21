@@ -2,105 +2,67 @@
 import sqlite3
 import os
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-DB_PATH = "/content/drive/MyDrive/ExpenseLensDatasets/expense_lens.db"
-
-UPLOAD_FOLDER = "/content/drive/MyDrive/ExpenseLens/uploads/receipts"
+DB_PATH = os.path.join(BASE_DIR, "expense_lens.db")
+UPLOAD_FOLDER = os.path.join(BASE_DIR, "..", "uploads", "receipts")
 
 
 def get_connection():
 
     return sqlite3.connect(DB_PATH)
 
-
-
 def create_tables():
 
     conn = get_connection()
     cursor = conn.cursor()
 
-
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS receipts(
-
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-
+        user_id TEXT,
         store TEXT,
-
         date TEXT,
-
         total REAL,
-
         items TEXT,
-
         notes TEXT,
-
         image_path TEXT,
-
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-
     )
     """)
-
-
 
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS feedback(
-
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-
         rating INTEGER,
-
         comment TEXT,
-
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-
     )
     """)
-
-
 
     conn.commit()
     conn.close()
 
 
-
-def save_image(uploaded_file):
+# ---------------- SAVE IMAGE ----------------
+def save_image(uploaded_file, user_id="guest"):
 
     try:
+        folder = os.path.join(UPLOAD_FOLDER, user_id)
+        os.makedirs(folder, exist_ok=True)
 
-        os.makedirs(
-            UPLOAD_FOLDER,
-            exist_ok=True
-        )
-
-
-        path = os.path.join(
-            UPLOAD_FOLDER,
-            uploaded_file.name
-        )
-
+        path = os.path.join(folder, uploaded_file.name)
 
         with open(path, "wb") as f:
-
-            f.write(
-                uploaded_file.getbuffer()
-            )
-
+            f.write(uploaded_file.getbuffer())
 
         return path
 
-
     except Exception as e:
-
         print("Image save error:", e)
-
         return None
 
-
-
-
-def save_receipt(data, image_path=None):
+def save_receipt(data, image_path=None, user_id="guest"):
 
     try:
 
@@ -111,16 +73,15 @@ def save_receipt(data, image_path=None):
 
         cursor.execute("""
         INSERT INTO receipts
-        (store,date,total,items,notes,image_path)
-
-        VALUES (?,?,?,?,?,?)
-        """,
-        (
+        (user_id, store, date, total, items, notes, image_path)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (
+            user_id,
             data["store"],
             data["date"],
             data["total"],
             data["items"],
-            data.get("notes",""),
+            data.get("notes", ""),
             image_path
         ))
 

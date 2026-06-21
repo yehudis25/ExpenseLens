@@ -1,10 +1,11 @@
 import streamlit as st
 import pandas as pd
 import os
-import sys
 
-sys.path.append("/content/expense_lens")
+if "user_id" not in st.session_state:
+    st.session_state["user_id"] = "user1"
 
+# get database
 from database.database import (
     create_tables,
     save_receipt,
@@ -24,8 +25,17 @@ st.set_page_config(
 
 # Create database tables
 create_tables()
+st.sidebar.text_input(
+    "User ID",
+    key="user_id_input"
+)
 
+if st.sidebar.button("Set User"):
+    st.session_state["user_id"] = st.session_state["user_id_input"]
+
+# logo
 LOGO_PATH = "/content/drive/MyDrive/ExpenseLensDatasets/logo.png"
+
 col1, col2 = st.columns([1, 4])
 with col1:
     if os.path.exists(LOGO_PATH):
@@ -175,14 +185,15 @@ if uploaded_file:
             try:
 
                 # Save receipt image into Google Drive
-                image_path = save_image(uploaded_file)
+                image_path = save_image(uploaded_file, st.session_state["user_id"])
 
 
                 # Save receipt information into SQLite
                 result = save_receipt(
-                    receipt,
-                    image_path
-                )
+                receipt,
+                image_path,
+                st.session_state["user_id"]
+            )
 
 
                 if result:
