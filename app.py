@@ -38,7 +38,7 @@ if st.sidebar.button("Set User"):
     st.session_state["user_id"] = st.session_state["user_id_input"]
 
 # logo
-LOGO_PATH = "/content/drive/MyDrive/ExpenseLensDatasets/logo.png"
+LOGO_PATH = "/workspaces/ExpenseLens/assets/Logo.png"
 
 col1, col2 = st.columns([1, 4])
 with col1:
