@@ -130,29 +130,29 @@ if uploaded_file:
 
         store = st.text_input(
             "Store",
-            st.session_state["receipt_data"]["store"]
+            st.session_state["receipt_data"].get("store", "")
         )
 
         date = st.text_input(
             "Date",
-            st.session_state["receipt_data"]["date"]
+            st.session_state["receipt_data"].get("date", "")
         )
 
         total = st.number_input(
             "Total",
             min_value=0.0,
-            value=float(st.session_state["receipt_data"]["total"]),
+            value=float(st.session_state["receipt_data"].get("total", 0)),
             step=0.01
         )
 
         items = st.text_area(
             "Items",
-            st.session_state["receipt_data"]["items"]
+            st.session_state["receipt_data"].get("items", "")
         )
 
         notes = st.text_area(
             "Notes",
-            st.session_state["receipt_data"]["notes"]
+            st.session_state["receipt_data"].get("notes", "")
         )
 
         saved = st.form_submit_button("💾 Save Receipt")
