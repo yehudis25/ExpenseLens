@@ -99,10 +99,25 @@ st.markdown("""
 # user can upload a file
 uploaded_file = st.file_uploader(
     "Upload a receipt image",
-    type=["png", "jpg", "jpeg"],
+    type=["png", "jpg", "jpeg", "pdf"],
     help="Upload a clear image of a receipt for automatic information extraction."
 )
+import os
 
+sample_files = []
+
+for root, dirs, files in os.walk("data"):
+    for file in files:
+        sample_files.append(os.path.join(root, file))
+
+
+sample = st.selectbox(
+    "Or test with sample files",
+    ["None"] + sample_files
+)
+
+if sample != "None":
+    uploaded_file = sample
 
 if uploaded_file:
     st.success("Receipt uploaded successfully!")
