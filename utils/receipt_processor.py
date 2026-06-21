@@ -67,13 +67,33 @@ def structure_text_with_llm(raw_text: str) -> dict:
         # Convert the structural text string back into a real Python dictionary
         return json.loads(response_text)
 
-    except Exception:
-        # fallback structure to ensure the app UI doesn't crash if processing fails
+    # except Exception:
+    #     # fallback structure to ensure the app UI doesn't crash if processing fails
+    #     return {
+    #         "store": "Parsing Failure",
+    #         "date": "Unknown Date",
+    #         "total": 0.0,
+    #         "items": "Could not format receipt data cleanly."
+    #     }
+    except Exception as e:
+        print("=" * 50)
+        print("DEBUG ERROR:", repr(e))
+        try:
+            print("DEBUG RAW RESPONSE:", response_text)
+        except NameError:
+            print("DEBUG: response_text was never set -- Ollama call itself failed")
+            print("=" * 50)
+
         return {
+
             "store": "Parsing Failure",
+
             "date": "Unknown Date",
+
             "total": 0.0,
+
             "items": "Could not format receipt data cleanly."
+
         }
 
 def process_receipt(image) -> dict:
@@ -85,4 +105,3 @@ def process_receipt(image) -> dict:
 
     raw_text = extract_raw_text(image)
     return structure_text_with_llm(raw_text)
-
