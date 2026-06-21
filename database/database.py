@@ -1,19 +1,22 @@
-
+# module to make and control the database
 import sqlite3
 import os
+from utils.encryption import encrypt, decrypt
 
+# for each seperate user
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 DB_PATH = os.path.join(BASE_DIR, "expense_lens.db")
 UPLOAD_FOLDER = os.path.join(BASE_DIR, "..", "uploads", "receipts")
 
-
+# connect to dtbs
 def get_connection():
-
     return sqlite3.connect(DB_PATH)
 
 def create_tables():
-
+    """
+    make tables in dtbs
+    """
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -44,9 +47,10 @@ def create_tables():
     conn.close()
 
 
-# ---------------- SAVE IMAGE ----------------
 def save_image(uploaded_file, user_id="guest"):
-
+    """
+    save image to dtbs
+    """
     try:
         folder = os.path.join(UPLOAD_FOLDER, user_id)
         os.makedirs(folder, exist_ok=True)
@@ -63,50 +67,40 @@ def save_image(uploaded_file, user_id="guest"):
         return None
 
 def save_receipt(data, image_path=None, user_id="guest"):
-
+    """
+    save a receipt with encrypted sensitive fields
+    """
     try:
-
         conn = get_connection()
-
         cursor = conn.cursor()
-
-
         cursor.execute("""
         INSERT INTO receipts
         (user_id, store, date, total, items, notes, image_path)
         VALUES (?, ?, ?, ?, ?, ?, ?)
         """, (
             user_id,
-            data["store"],
-            data["date"],
-            data["total"],
-            data["items"],
-            data.get("notes", ""),
+            encrypt(data["store"]),
+            encrypt(data["date"]),
+            encrypt(str(data["total"])),
+            encrypt(data["items"]),
+            encrypt(data.get("notes", "")),
             image_path
         ))
-
-
         conn.commit()
         conn.close()
-
-
         return True
-
-
     except Exception as e:
-
         print("Receipt save error:", e)
-
         return False
 
 
 
 
 def get_receipts():
-
+    """
+    get receipts and decrypt sensitive fields
+    """
     conn = get_connection()
-
-
     rows = conn.execute(
         """
         SELECT *
@@ -114,23 +108,36 @@ def get_receipts():
         ORDER BY created_at DESC
         """
     ).fetchall()
-
-
     conn.close()
+    # decrypt the data
+    decrypted_rows = []
 
+    for row in rows:
+        decrypted_rows.append(
+            (
+                row[0],                 # id
+                row[1],                 # user_id
+                decrypt(row[2]),        # store
+                decrypt(row[3]),        # date
+                float(decrypt(row[4])), # total
+                decrypt(row[5]),        # items
+                decrypt(row[6]),        # notes
+                row[7],                 # image_path
+                row[8]                  # created_at
+            )
+        )
 
-    return rows
+    return decrypted_rows
 
 
 
 
 def delete_receipt(receipt_id):
-
+    """
+    delete receipts
+    """
     try:
-
         conn = get_connection()
-
-
         conn.execute(
             """
             DELETE FROM receipts
@@ -138,29 +145,23 @@ def delete_receipt(receipt_id):
             """,
             (receipt_id,)
         )
-
-
         conn.commit()
         conn.close()
-
-
         return True
 
 
     except Exception as e:
-
         print(e)
-
         return False
 
 
 
 
 def save_feedback(rating, comment):
-
+    """
+    save ratings and feedback
+    """
     conn = get_connection()
-
-
     conn.execute(
         """
         INSERT INTO feedback
@@ -173,7 +174,6 @@ def save_feedback(rating, comment):
             comment
         )
     )
-
 
     conn.commit()
     conn.close()

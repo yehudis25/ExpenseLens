@@ -1,7 +1,7 @@
+# page with details of receipt
 import streamlit as st
 
 st.title("🧾 Invoice / Receipt Detail")
-
 
 # Session data
 receipt_image = st.session_state.get("uploaded_image")

@@ -5,3 +5,4 @@ pillow
 easyocr
 ollama
 opencv-python-headless
+cryptography

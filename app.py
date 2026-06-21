@@ -1,7 +1,9 @@
+# module for startup page - where user uploades and edits receipts
 import streamlit as st
 import pandas as pd
 import os
 
+# create different user (database) for each user
 if "user_id" not in st.session_state:
     st.session_state["user_id"] = "user1"
 
@@ -13,6 +15,7 @@ from database.database import (
     save_feedback
 )
 
+# get the receipt processor model
 from utils.receipt_processor import process_receipt
 
 # configure the page, must run first
@@ -30,6 +33,7 @@ st.sidebar.text_input(
     key="user_id_input"
 )
 
+# set user
 if st.sidebar.button("Set User"):
     st.session_state["user_id"] = st.session_state["user_id_input"]
 
@@ -106,32 +110,22 @@ if uploaded_file:
 
     st.session_state["uploaded_image"] = uploaded_file
     # OCR + AI extraction
-
     if "receipt_data" not in st.session_state:
-
-
         try:
-
             extracted = process_receipt(uploaded_file)
-
             st.session_state["receipt_data"] = extracted
-
-
         except Exception as e:
-
             st.error(
                 "Receipt processing failed."
             )
-
             st.write(e)
 
 
 
     data = st.session_state["receipt_data"]
-
     st.divider()
     st.subheader("✏️ Review & Edit AI Extraction")
-
+    # show AI extracted data
     with st.form("receipt_form"):
 
         store = st.text_input(
@@ -163,10 +157,8 @@ if uploaded_file:
 
         saved = st.form_submit_button("💾 Save Receipt")
 
-
+        # save data from receipt
         if saved:
-
-
             receipt = {
 
                 "store": store,
@@ -174,19 +166,14 @@ if uploaded_file:
                 "total": total,
                 "items": items,
                 "notes": notes
-
             }
-
-
             st.session_state["receipt_data"] = receipt
 
 
 
             try:
-
-                # Save receipt image into Google Drive
+                # Save receipt image 
                 image_path = save_image(uploaded_file, st.session_state["user_id"])
-
 
                 # Save receipt information into SQLite
                 result = save_receipt(
@@ -194,23 +181,17 @@ if uploaded_file:
                 image_path,
                 st.session_state["user_id"]
             )
-
-
+                # did it save properly?
                 if result:
-
                     st.success(
                         "Receipt saved permanently!"
                     )
 
                 else:
-
                     st.error(
                         "Could not save receipt."
                     )
-
-
             except Exception as e:
-
                 st.error(
                     "Database save failed"
                 )
@@ -239,9 +220,8 @@ with st.form("feedback_form"):
     submitted = st.form_submit_button("Submit Feedback")
 
 if submitted:
-
+    # save feedback to dtbs
     try:
-
         save_feedback(
             rating,
             comment
@@ -252,7 +232,6 @@ if submitted:
             "Thank you for your feedback!"
         )
 
-
         st.write(
             "Your rating:",
             "⭐" * rating
@@ -260,7 +239,6 @@ if submitted:
 
 
     except Exception as e:
-
         st.error(
             "Could not save feedback"
         )
