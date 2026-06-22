@@ -4,6 +4,25 @@ import json
 import re
 import numpy as np
 from PIL import Image
+import streamlit as st
+
+@st.cache_resource
+def get_reader():
+    return easyocr.Reader(['en'], gpu=False)
+
+@st.cache_resource
+def warm_llm():
+    try:
+        ollama.generate(
+            model="llama3.2:3b",
+            prompt="ping",
+            options={"num_predict": 1}
+        )
+        return "LLM warmed"
+    except:
+        return "LLM unavailable"
+
+warm_llm()
 
 def extract_raw_text(image_input) -> str:
     """
@@ -12,7 +31,7 @@ def extract_raw_text(image_input) -> str:
     """
     try:
         # Initialize the EasyOCR reader
-        reader = easyocr.Reader(['en'], gpu=False)
+        reader = get_reader()
 
         # Convert the uploaded file or image format into a numpy array for EasyOCR
         if hasattr(image_input, 'read'):
@@ -31,69 +50,57 @@ def extract_raw_text(image_input) -> str:
 
 def structure_text_with_llm(raw_text: str) -> dict:
     """
-    Feeds unstructured text to llama3.2:3b via Ollama to map it into clean JSON.
+    Sends OCR text to Llama and safely extracts valid JSON.
+    Repairs common LLM formatting issues before json.loads().
     """
-    # prompt layout enforcing the fields required by project proposal
     prompt = f"""
     You are a data extraction assistant for the ExpenseLens app.
     Analyze the following raw OCR text extracted from a store receipt and return a valid JSON object.
 
     The JSON object MUST contain exactly these keys:
-    - "store": (string, name of the store or merchant)
-    - "date": (string, formatted as MM/DD/YYYY if found)
-    - "total": (float, final absolute cost/total paid)
-    - "items": (string, comma-separated names of products purchased)
+    - "store"
+    - "date"
+    - "total"
+    - "items"
 
-    Do not include any introductory conversation, markdown code blocks (like ```json), or explanatory text.
-    Only output the raw string containing the JSON object.
+    Only output the JSON object. No commentary.
 
     Raw OCR Text:
     {raw_text}
     """
 
     try:
-        # Generate token responses
         response = ollama.generate(
             model='llama3.2:3b',
             prompt=prompt,
-            options={"temperature": 0.0}
+            options={"temperature": 0.0, "num_predict": 512}
         )
 
-        response_text = response['response'].strip()
+        raw = response["response"].strip()
 
-        # Strip away markdown code block symbols if Llama wraps the JSON output
-        response_text = re.sub(r"^```json\s*|\s*```$", "", response_text, flags=re.MULTILINE).strip()
+        # Extract the first JSON object
+        match = re.search(r"\{.*\}", raw, re.DOTALL)
+        if not match:
+            raise ValueError("No JSON object found in model output")
 
-        # Convert the structural text string back into a real Python dictionary
-        return json.loads(response_text)
+        json_text = match.group(0)
 
-    # except Exception:
-    #     # fallback structure to ensure the app UI doesn't crash if processing fails
-    #     return {
-    #         "store": "Parsing Failure",
-    #         "date": "Unknown Date",
-    #         "total": 0.0,
-    #         "items": "Could not format receipt data cleanly."
-    #     }
+        # Remove trailing backslashes that break JSON
+        json_text = re.sub(r"\\\s*$", "", json_text, flags=re.MULTILINE)
+        json_text = json_text.replace('\\"', '"')
+        return json.loads(json_text)
+
     except Exception as e:
         print("=" * 50)
         print("DEBUG ERROR:", repr(e))
-        try:
-            print("DEBUG RAW RESPONSE:", response_text)
-        except NameError:
-            print("DEBUG: response_text was never set -- Ollama call itself failed")
-            print("=" * 50)
+        print("DEBUG RAW RESPONSE:", raw if 'raw' in locals() else "No response")
+        print("=" * 50)
 
         return {
-
             "store": "Parsing Failure",
-
             "date": "Unknown Date",
-
             "total": 0.0,
-
             "items": "Could not format receipt data cleanly."
-
         }
 
 def process_receipt(image) -> dict:

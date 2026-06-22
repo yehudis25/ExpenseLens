@@ -160,10 +160,28 @@ if uploaded_file:
             step=0.01
         )
 
-        items = st.text_area(
-            "Items",
-            st.session_state["receipt_data"].get("items", "")
-        )
+        st.markdown("### Items")
+        try:
+        # Convert extracted items into a DataFrame
+            items_list = st.session_state["receipt_data"].get("items", [])
+            if isinstance(items_list, str):
+                # If LLM returned a string, try to parse it
+                import ast
+                items_list = ast.literal_eval(items_list)
+
+            df = pd.DataFrame(items_list)
+            df = df.drop(columns=["id", "pk", "item_id"], errors="ignore")  # hide primary keys
+
+            if {"price", "quantity"}.issubset(df.columns):
+                df["subtotal"] = df["price"] * df["quantity"]
+
+            edited_df = st.data_editor(df, use_container_width=True)
+            items = edited_df.to_dict(orient="records")
+            st.session_state["receipt_data"]["items"] = items
+
+        except Exception as e:
+            st.warning("Could not display items as a table.")
+            st.write(e)
 
         notes = st.text_area(
             "Notes",
