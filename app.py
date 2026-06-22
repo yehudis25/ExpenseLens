@@ -120,14 +120,22 @@ if sample != "None":
     uploaded_file = sample
 
 if uploaded_file:
-    st.success("Receipt uploaded successfully!")
-    st.image(uploaded_file, width=300)
 
-    st.session_state["uploaded_image"] = uploaded_file
+    st.success("Receipt uploaded successfully!")
+
+    # handle sample files vs uploaded files
+    if isinstance(uploaded_file, str):
+        image_input = uploaded_file
+    else:
+        image_input = uploaded_file
+
+    st.image(image_input, width=300)
+
+    st.session_state["uploaded_image"] = image_input
     # OCR + AI extraction
     if "receipt_data" not in st.session_state:
         try:
-            extracted = process_receipt(uploaded_file)
+            extracted = process_receipt(image_input)
             st.session_state["receipt_data"] = extracted
         except Exception as e:
             st.error(
