@@ -2,6 +2,9 @@
 import streamlit as st
 import pandas as pd
 import os
+from PIL import Image
+import io
+
 
 # create different user (database) for each user
 if "user_id" not in st.session_state:
@@ -99,9 +102,11 @@ st.markdown("""
 # user can upload a file
 uploaded_file = st.file_uploader(
     "Upload a receipt image",
-    type=["png", "jpg", "jpeg", "pdf"],
+    type=["png", "jpg", "jpeg"],
     help="Upload a clear image of a receipt for automatic information extraction."
 )
+
+# sample receipts to test with
 import os
 
 sample_files = []
@@ -119,29 +124,28 @@ sample = st.selectbox(
 if sample != "None":
     uploaded_file = sample
 
+image_input = None
+
 if uploaded_file:
 
-    st.success("Receipt uploaded successfully!")
-
-    # handle sample files vs uploaded files
+    # sample file (string path)
     if isinstance(uploaded_file, str):
         image_input = uploaded_file
+
+    # uploaded image file (Streamlit object)
     else:
         image_input = uploaded_file
+if image_input:
+
+    st.success("Receipt uploaded successfully!")
 
     st.image(image_input, width=300)
 
     st.session_state["uploaded_image"] = image_input
-    # OCR + AI extraction
+
     if "receipt_data" not in st.session_state:
-        try:
-            extracted = process_receipt(image_input)
-            st.session_state["receipt_data"] = extracted
-        except Exception as e:
-            st.error(
-                "Receipt processing failed."
-            )
-            st.write(e)
+        extracted = process_receipt(image_input)
+        st.session_state["receipt_data"] = extracted
 
 
 
@@ -196,7 +200,7 @@ if uploaded_file:
 
             try:
                 # Save receipt image 
-                image_path = save_image(uploaded_file, st.session_state["user_id"])
+                image_path = save_image(image_input, st.session_state["user_id"])
 
                 # Save receipt information into SQLite
                 result = save_receipt(
