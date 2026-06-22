@@ -6,3 +6,4 @@ easyocr
 ollama
 opencv-python-headless
 cryptography
+pdf2image
