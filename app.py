@@ -2,7 +2,7 @@
 import streamlit as st
 import pandas as pd
 import os
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 import io
 
 
@@ -137,109 +137,112 @@ if uploaded_file:
         image_input = uploaded_file
 if image_input:
 
-    st.success("Receipt uploaded successfully!")
+    
+    try:
+        st.image(image_input, width=300)
+    except UnidentifiedImageError:
+        st.error("Invalid image - please upload another image")
+    else: # only runs if no exception thrown
+        st.success("Receipt uploaded successfully!")
+        st.session_state["uploaded_image"] = image_input
 
-    st.image(image_input, width=300)
-
-    st.session_state["uploaded_image"] = image_input
-
-    if "receipt_data" not in st.session_state:
-        extracted = process_receipt(image_input)
-        st.session_state["receipt_data"] = extracted
-
-
-
-    data = st.session_state["receipt_data"]
-    st.divider()
-    st.subheader("✏️ Review & Edit AI Extraction")
-    # show AI extracted data
-    with st.form("receipt_form"):
-
-        store = st.text_input(
-            "Store",
-            st.session_state["receipt_data"].get("store", "")
-        )
-
-        date = st.text_input(
-            "Date",
-            st.session_state["receipt_data"].get("date", "")
-        )
-
-        total = st.number_input(
-            "Total",
-            min_value=0.0,
-            value=float(st.session_state["receipt_data"].get("total", 0)),
-            step=0.01
-        )
-
-        st.markdown("### Items")
-        try:
-        # Convert extracted items into a DataFrame
-            items_list = st.session_state["receipt_data"].get("items", [])
-            if isinstance(items_list, str):
-                # If LLM returned a string, try to parse it
-                import ast
-                items_list = ast.literal_eval(items_list)
-
-            df = pd.DataFrame(items_list)
-            df = df.drop(columns=["id", "pk", "item_id"], errors="ignore")  # hide primary keys
-
-            if {"price", "quantity"}.issubset(df.columns):
-                df["subtotal"] = df["price"] * df["quantity"]
-
-            edited_df = st.data_editor(df, use_container_width=True)
-            items = edited_df.to_dict(orient="records")
-            st.session_state["receipt_data"]["items"] = items
-
-        except Exception as e:
-            st.warning("Could not display items as a table.")
-            st.write(e)
-
-        notes = st.text_area(
-            "Notes",
-            st.session_state["receipt_data"].get("notes", "")
-        )
-
-        saved = st.form_submit_button("💾 Save Receipt")
-
-        # save data from receipt
-        if saved:
-            receipt = {
-
-                "store": store,
-                "date": date,
-                "total": total,
-                "items": items,
-                "notes": notes
-            }
-            st.session_state["receipt_data"] = receipt
+        if "receipt_data" not in st.session_state:
+            extracted = process_receipt(image_input)
+            st.session_state["receipt_data"] = extracted
 
 
 
-            try:
-                # Save receipt image 
-                image_path = save_image(image_input, st.session_state["user_id"])
+        data = st.session_state["receipt_data"]
+        st.divider()
+        st.subheader("✏️ Review & Edit AI Extraction")
+        # show AI extracted data
+        with st.form("receipt_form"):
 
-                # Save receipt information into SQLite
-                result = save_receipt(
-                receipt,
-                image_path,
-                st.session_state["user_id"]
+            store = st.text_input(
+                "Store",
+                st.session_state["receipt_data"].get("store", "")
             )
-                # did it save properly?
-                if result:
-                    st.success(
-                        "Receipt saved permanently!"
-                    )
 
-                else:
-                    st.error(
-                        "Could not save receipt."
-                    )
+            date = st.text_input(
+                "Date",
+                st.session_state["receipt_data"].get("date", "")
+            )
+
+            total = st.number_input(
+                "Total",
+                min_value=0.0,
+                value=float(st.session_state["receipt_data"].get("total", 0)),
+                step=0.01
+            )
+
+            st.markdown("### Items")
+            try:
+            # Convert extracted items into a DataFrame
+                items_list = st.session_state["receipt_data"].get("items", [])
+                if isinstance(items_list, str):
+                    # If LLM returned a string, try to parse it
+                    import ast
+                    items_list = ast.literal_eval(items_list)
+
+                df = pd.DataFrame(items_list)
+                df = df.drop(columns=["id", "pk", "item_id"], errors="ignore")  # hide primary keys
+
+                if {"price", "quantity"}.issubset(df.columns):
+                    df["subtotal"] = df["price"] * df["quantity"]
+
+                edited_df = st.data_editor(df, use_container_width=True)
+                items = edited_df.to_dict(orient="records")
+                st.session_state["receipt_data"]["items"] = items
+
             except Exception as e:
-                st.error(
-                    "Database save failed"
+                st.warning("Could not display items as a table.")
+                st.write(e)
+
+            notes = st.text_area(
+                "Notes",
+                st.session_state["receipt_data"].get("notes", "")
+            )
+
+            saved = st.form_submit_button("💾 Save Receipt")
+
+            # save data from receipt
+            if saved:
+                receipt = {
+
+                    "store": store,
+                    "date": date,
+                    "total": total,
+                    "items": items,
+                    "notes": notes
+                }
+                st.session_state["receipt_data"] = receipt
+
+
+
+                try:
+                    # Save receipt image 
+                    image_path = save_image(image_input, st.session_state["user_id"])
+
+                    # Save receipt information into SQLite
+                    result = save_receipt(
+                    receipt,
+                    image_path,
+                    st.session_state["user_id"]
                 )
+                    # did it save properly?
+                    if result:
+                        st.success(
+                            "Receipt saved permanently!"
+                        )
+
+                    else:
+                        st.error(
+                            "Could not save receipt."
+                        )
+                except Exception as e:
+                    st.error(
+                        "Database save failed"
+                    )
 
 
 # add page here
