@@ -7,17 +7,11 @@ st.title("🧾 Invoice / Receipt Detail")
 receipt_image = st.session_state.get("uploaded_image")
 receipt_data = st.session_state.get("receipt_data")
 
-# fake for now
 if receipt_image is None:
-    receipt_image = "https://via.placeholder.com/400x600"
+    st.info("No receipt image available")
 if receipt_data is None:
-    receipt_data = {
-        "store": "Demo",
-        "date": "2026-06-11",
-        "total": 0,
-        "items": "",
-        "notes": ""
-    }
+    st.warning("No receipt loaded")
+    st.stop()
 col1, col2 = st.columns(2)
 
 with col1:
@@ -37,7 +31,12 @@ with col2:
     st.write(f"${float(receipt_data.get('total') or 0):.2f}")
 
     st.subheader("Items")
-    st.write(receipt_data.get("items", ""))
+    items = receipt_data.get("items", [])
+
+    if isinstance(items, list):
+        st.dataframe(items)
+    else:
+        st.write(items)
 
     st.subheader("Notes")
     st.write(receipt_data.get("notes", ""))

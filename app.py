@@ -29,12 +29,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Create database tables
-create_tables()
-st.sidebar.text_input(
-    "User ID",
-    key="user_id_input"
-)
 
 
 # logo

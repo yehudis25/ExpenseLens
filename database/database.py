@@ -2,6 +2,7 @@
 import sqlite3
 import os
 from utils.encryption import encrypt, decrypt
+import json
 
 # for each seperate user
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -82,7 +83,7 @@ def save_receipt(data, image_path=None, user_id="guest"):
             encrypt(data["store"]),
             encrypt(data["date"]),
             encrypt(str(data["total"])),
-            encrypt(data["items"]),
+            encrypt(json.dumps(data["items"])),
             encrypt(data.get("notes", "")),
             image_path
         ))
@@ -96,18 +97,29 @@ def save_receipt(data, image_path=None, user_id="guest"):
 
 
 
-def get_receipts():
+def get_receipts(user_id=None):
     """
     get receipts and decrypt sensitive fields
     """
     conn = get_connection()
-    rows = conn.execute(
-        """
-        SELECT *
-        FROM receipts
-        ORDER BY created_at DESC
-        """
-    ).fetchall()
+    if user_id:
+        rows = conn.execute(
+            """
+            SELECT *
+            FROM receipts
+            WHERE user_id=?
+            ORDER BY created_at DESC
+            """,
+            (user_id,)
+        ).fetchall()
+    else:
+        rows = conn.execute(
+            """
+            SELECT *
+            FROM receipts
+            ORDER BY created_at DESC
+            """
+        ).fetchall()
     conn.close()
     # decrypt the data
     decrypted_rows = []
@@ -120,7 +132,7 @@ def get_receipts():
                 decrypt(row[2]),        # store
                 decrypt(row[3]),        # date
                 float(decrypt(row[4])), # total
-                decrypt(row[5]),        # items
+                json.loads(decrypt(row[5])),        # items
                 decrypt(row[6]),        # notes
                 row[7],                 # image_path
                 row[8]                  # created_at
@@ -133,22 +145,23 @@ def get_receipts():
 
 
 def delete_receipt(receipt_id):
-    """
-    delete receipts
-    """
     try:
         conn = get_connection()
-        conn.execute(
-            """
-            DELETE FROM receipts
-            WHERE id=?
-            """,
-            (receipt_id,)
-        )
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT image_path FROM receipts WHERE id=?", (receipt_id,))
+        row = cursor.fetchone()
+
+        if row and row[0]:
+            try:
+                os.remove(row[0])
+            except:
+                pass
+
+        cursor.execute("DELETE FROM receipts WHERE id=?", (receipt_id,))
         conn.commit()
         conn.close()
         return True
-
 
     except Exception as e:
         print(e)
