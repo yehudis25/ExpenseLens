@@ -139,7 +139,7 @@ if image_input:
     except UnidentifiedImageError:
         st.error("Invalid image - please upload another image")
     else: # only runs if no exception thrown
-        st.success("Receipt uploaded successfully!")
+        st.success("Receipt uploaded successfully, please wait while we process the data")
         st.session_state["uploaded_image"] = image_input
 
         if "receipt_data" not in st.session_state:
