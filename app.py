@@ -4,8 +4,10 @@ import pandas as pd
 import os
 from PIL import Image, UnidentifiedImageError
 import io
+from utils.receipt_processor import process_receipt, receipt_check, extract_raw_text
+from database.database import create_tables
 
-
+create_tables()
 # create different user (database) for each user - to be continued...
 if "user_id" not in st.session_state:
     st.session_state["user_id"] = "user1"
@@ -17,9 +19,6 @@ from database.database import (
     save_image,
     save_feedback
 )
-
-# get the receipt processor model
-from utils.receipt_processor import process_receipt
 
 # configure the page, must run first
 st.set_page_config(
@@ -93,7 +92,7 @@ st.markdown("""
 # user can upload a file
 uploaded_file = st.file_uploader(
     "Upload a receipt image",
-    type=["png", "jpg", "jpeg"],
+    type=["png", "jpg", "jpeg", "pdf", "docx"],
     help="Upload a clear image of a receipt for automatic information extraction."
 )
 
@@ -122,7 +121,9 @@ if uploaded_file:
     # sample file (string path)
     if isinstance(uploaded_file, str):
         image_input = uploaded_file
-
+    elif isinstance(image_input, str):
+        img = Image.open(image_input)
+        img_np = np.array(img)
     # uploaded image file (Streamlit object)
     else:
         image_input = uploaded_file
@@ -139,16 +140,21 @@ if image_input:
     except UnidentifiedImageError:
         st.error("Invalid image - please upload another image")
     else: # only runs if no exception thrown
-        st.success("Receipt uploaded successfully, please wait while we process the data")
-        st.session_state["uploaded_image"] = image_input
-
+       # OCR + VALIDATION
         if "receipt_data" not in st.session_state:
-            extracted = process_receipt(image_input)
-            st.session_state["receipt_data"] = extracted
 
+            with st.spinner("Analyzing document..."):
+                extracted_text = extract_raw_text(image_input)
 
+                # Run LLM validator
+                if not receipt_check(extracted_text):
+                    st.error("This does not appear to be a receipt or invoice.")
+                    st.stop()
 
+                st.session_state["receipt_data"] = process_receipt(image_input)
+            st.success("Valid receipt detected! Extracting structured data...")
         data = st.session_state["receipt_data"]
+
         st.divider()
         st.subheader("✏️ Review & Edit AI Extraction")
         # show AI extracted data

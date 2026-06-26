@@ -24,6 +24,31 @@ def warm_llm():
 
 warm_llm()
 
+def receipt_check(text: str) -> bool:
+    """
+    Very simple keyword-based receipt/invoice detector.
+    Works even with messy OCR.
+    """
+    if not text:
+        return False
+
+    text_lower = text.lower()
+
+    receipt_keywords = [
+        "total", "subtotal", "tax", "amount", "change", "cash", "debit",
+        "credit", "visa", "mastercard", "receipt", "thank you", "store",
+        "item", "qty", "quantity", "price"
+    ]
+
+    invoice_keywords = [
+        "invoice", "bill to", "ship to", "due date", "invoice number",
+        "balance due", "amount due"
+    ]
+
+    # If any receipt or invoice keyword appears → treat as valid
+    return any(k in text_lower for k in receipt_keywords + invoice_keywords)
+
+
 def extract_raw_text(image_input) -> str:
     """
     Uses EasyOCR to pull raw text lines out of the uploaded receipt image.

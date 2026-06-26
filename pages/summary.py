@@ -3,6 +3,7 @@ import streamlit as st
 import pandas as pd
 from datetime import date
 import streamlit.components.v1 as components
+from database.database import get_receipts
 st.markdown("""
 <style>
 @media print {
@@ -43,13 +44,24 @@ st.title("Receipt Summary & Reports")
 st.write("Analyze your spending habits. Use the filters below to update your report and charts.")
 
 # Define your data function locally so the page can access it
+# def extract_data():
+#     return [
+#         (date(2026, 6, 10), "Pick 'n Pay", 1000.00),
+#         (date(2026, 6, 12), "Clicks", 550.50),
+#         (date(2026, 6, 22), "Corner Cafe", 250.80),
+#         (date(2026, 10, 4), "Corner Cafe", 250.80)
+#     ]
 def extract_data():
-    return [
-        (date(2026, 6, 10), "Pick 'n Pay", 1000.00),
-        (date(2026, 6, 12), "Clicks", 550.50),
-        (date(2026, 6, 22), "Corner Cafe", 250.80),
-        (date(2026, 10, 4), "Corner Cafe", 250.80)
-    ]
+    receipts = get_receipts(st.session_state.get("user_id", "user1"))
+    rows = []
+
+    for r in receipts:
+        # r = (id, user_id, store, date, total, items, notes, image_path, created_at)
+        try:
+            rows.append((pd.to_datetime(r[3]).date(), r[2], float(r[4])))
+        except:
+            continue
+    return rows
 
 def filter_receipts_by_date(receipts, start, end):
     return [receipt for receipt in receipts if start <= receipt[0] <= end]
