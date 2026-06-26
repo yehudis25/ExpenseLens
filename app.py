@@ -184,6 +184,10 @@ if image_input:
                 df = df.drop(columns=["id", "pk", "item_id"], errors="ignore")  # hide primary keys
 
                 if {"price", "quantity"}.issubset(df.columns):
+                    # Ensure price and quantity are treated as numbers (invalid values turn into NaN)
+                    df["price"] = pd.to_numeric(df["price"], errors="coerce")
+                    df["quantity"] = pd.to_numeric(df["quantity"], errors="coerce")
+                    
                     df["subtotal"] = df["price"] * df["quantity"]
 
                 edited_df = st.data_editor(df, use_container_width=True)
