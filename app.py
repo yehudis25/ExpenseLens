@@ -6,7 +6,7 @@ from PIL import Image, UnidentifiedImageError
 import io
 
 
-# create different user (database) for each user
+# create different user (database) for each user - to be continued...
 if "user_id" not in st.session_state:
     st.session_state["user_id"] = "user1"
 
