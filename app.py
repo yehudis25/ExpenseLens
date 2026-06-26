@@ -36,9 +36,6 @@ st.sidebar.text_input(
     key="user_id_input"
 )
 
-# set user
-if st.sidebar.button("Set User"):
-    st.session_state["user_id"] = st.session_state["user_id_input"]
 
 # logo
 LOGO_PATH = "/workspaces/ExpenseLens/assets/Logo.png"
@@ -136,7 +133,12 @@ if uploaded_file:
     else:
         image_input = uploaded_file
 if image_input:
+    # detect new receipt
+    current_file = str(image_input)
 
+    if st.session_state.get("last_uploaded") != current_file:
+        st.session_state.pop("receipt_data", None)
+        st.session_state["last_uploaded"] = current_file
     
     try:
         st.image(image_input, width=300)
@@ -192,7 +194,6 @@ if image_input:
 
                 edited_df = st.data_editor(df, use_container_width=True)
                 items = edited_df.to_dict(orient="records")
-                st.session_state["receipt_data"]["items"] = items
 
             except Exception as e:
                 st.warning("Could not display items as a table.")
