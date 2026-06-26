@@ -8,11 +8,13 @@
 
 ## Overview
 
-Expense Lens AI is an intelligent receipt and invoice management system that uses OCR and AI-powered extraction to convert receipt images into organized expense records.
+Expense Lens AI is an intelligent receipt and invoice management system designed especially for freelancers who need a simple way to track expenses.
+
+Using OCR and AI-powered extraction, Expense Lens converts receipt images into organized digital expense records — eliminating the need for manual data entry.
 
 Users can upload a receipt, automatically extract important information, review and edit the results, and securely store their expenses.
 
-Built with privacy in mind: AI processing runs locally using Ollama, keeping sensitive financial documents on the user's machine.
+Built with privacy in mind: all AI processing runs locally using Ollama, keeping sensitive financial documents on the user's machine instead of sending data to external services.
 
 ---
 
