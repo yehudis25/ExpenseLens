@@ -2,6 +2,7 @@
 import streamlit as st
 import pandas as pd
 from datetime import date
+from database.database import get_receipts, filter_receipts
 import streamlit.components.v1 as components
 st.markdown("""
 <style>
@@ -43,19 +44,19 @@ st.title("Receipt Summary & Reports")
 st.write("Analyze your spending habits. Use the filters below to update your report and charts.")
 
 # Define your data function locally so the page can access it
-def extract_data():
-    return [
-        (date(2026, 6, 10), "Pick 'n Pay", 1000.00),
-        (date(2026, 6, 12), "Clicks", 550.50),
-        (date(2026, 6, 22), "Corner Cafe", 250.80),
-        (date(2026, 10, 4), "Corner Cafe", 250.80)
-    ]
+# def extract_data():
+#     return [
+#         (date(2026, 6, 10), "Pick 'n Pay", 1000.00),
+#         (date(2026, 6, 12), "Clicks", 550.50),
+#         (date(2026, 6, 22), "Corner Cafe", 250.80),
+#         (date(2026, 10, 4), "Corner Cafe", 250.80)
+#     ]
 
-def filter_receipts_by_date(receipts, start, end):
-    return [receipt for receipt in receipts if start <= receipt[0] <= end]
+# def filter_receipts_by_date(receipts, start, end):
+#     return [receipt for receipt in receipts if start <= receipt[0] <= end]
 
-def filter_receipts_by_cost(receipts, min_val, max_val):
-    return [receipt for receipt in receipts if min_val <= receipt[2] <= max_val]
+# def filter_receipts_by_cost(receipts, min_val, max_val):
+#     return [receipt for receipt in receipts if min_val <= receipt[2] <= max_val]
 
 def currency(): # just for reference will used based off of pic - assume will only use one currency..
     return "$"
@@ -73,52 +74,79 @@ def search_receipts(selected):  # will need to implement properly once receipts 
     }
 # Always initialize 'rows' with default data right away
 curr = currency()
-rows = extract_data()
+rows = filter_receipts()
 default_display = True
+user_store = "Select store"
+start_date = None
+end_date= None
+min_cost = None
+max_cost = None
 # Filter options
 filter_store_option = st.checkbox("Filter by store")
 if filter_store_option:
   # show store names as well as 'Select store' in dropdown
-  user_store= st.selectbox("Select a store", ["Select store"] + list(set(receipt[1] for receipt in extract_data())))
+  user_store= st.selectbox("Select a store", ["Select store"] + list(set(receipt[1] for receipt in filter_receipts())))
   if user_store and user_store != "Select store":
       default_display = False
       # show receipts with matching store that user selected
-      rows = [receipt for receipt in extract_data() if receipt[1] == user_store]
+    #   rows = [receipt for receipt in get_receipts() if receipt[1] == user_store]
 
 filter_cost_option = st.checkbox("Filter by cost")
 if filter_cost_option:
-  min_cost = st.number_input("Enter minimum cost", min_value=1, max_value=2000000, step=1, value=1000)
-  max_cost = st.number_input("Enter maximum cost", min_value=1, max_value=2000000, step=1, value=5000)
-  default_display = False
+  min_cost = st.number_input("Enter minimum cost", min_value=1, max_value=2000000, step=1, value=100)
+  max_cost = st.number_input("Enter maximum cost", min_value=1, max_value=2000000, step=1, value=500)
+#   default_display = False
+else: 
+    min_cost = None
+    max_cost = None
 
 filter_date_option = st.checkbox("Filter by date")
+
 if filter_date_option:
   start_date = st.date_input("Select starting date")
   end_date = st.date_input("Select ending date")
-  default_display = False
+else:
+    start_date=None
+    end_date=None
+#   default_display = False
 
 # button to implement cost and date filtering
-if filter_cost_option or filter_date_option:
-  if filter_cost_option:
-      btn_message = "cost"
-      if filter_date_option:
-          btn_message += " and date"
-  else:
-      btn_message = "date"
-  btn_filter = st.button(f"Filter receipts by {btn_message}")
+if filter_cost_option or filter_date_option or filter_store_option and user_store != "Select store":
+    # if filter_store_option:
+    #     btn_message = "store"
+    # if filter_cost_option:
+    #     btn_message = "cost"
+    # if filter_date_option:
+    #     btn_message += " and date"
+  btn_filter = st.button(f"Filter receipts")
   # Filtering receipts based on user input
   if btn_filter:
-    if filter_store_option: # use receipts that have already been filtered by store
-        rows_to_search = rows
-    else:
-      rows_to_search = extract_data() # use all receipts
-    if filter_date_option:
-      rows_to_search = filter_receipts_by_date(rows_to_search, start_date, end_date)
-    if filter_cost_option:
-      rows_to_search = filter_receipts_by_cost(rows_to_search, min_cost, max_cost)
+    default_display = False
+    st.write(user_store)
+    st.write(min_cost)
+    st.write(max_cost)
+    st.write(start_date)
+    st.write(end_date)
+    results = filter_receipts(user_store, min_cost, max_cost, start_date, end_date)
 
-    st.session_state.rows = rows_to_search
+
+
+    ############################
+    # if filter_store_option: # use receipts that have already been filtered by store
+    #     rows_to_search = rows
+    # else:
+    #   rows_to_search = extract_data() # use all receipts
+    # if filter_date_option:
+    #   rows_to_search = filter_receipts_by_date(rows_to_search, start_date, end_date)
+    # if filter_cost_option:
+    #   rows_to_search = filter_receipts_by_cost(rows_to_search, min_cost, max_cost)
+    # st.session_state.rows = rows_to_search
+    # rows = st.session_state.rows
+    ##################################
+
+    st.session_state.rows = results
     rows = st.session_state.rows
+
     if len(rows) == 0:
       st.write("Sorry no matching receipts were found - please enter different filtering conditions")
 
