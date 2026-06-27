@@ -147,7 +147,11 @@ if image_input:
         st.session_state["uploaded_image"] = image_input
 
         if "receipt_data" not in st.session_state:
-            extracted = process_receipt(image_input)
+            try:
+                with st.spinner("Processing receipt/invoice data - this may take a minute"):
+                    extracted = process_receipt(image_input)
+            except Exception as e:
+                st.error(f"Processing failed")
             st.session_state["receipt_data"] = extracted
 
 
