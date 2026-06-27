@@ -1,6 +1,6 @@
 # page with details of receipt
 import streamlit as st
-
+from database.database import delete_receipt
 st.title("🧾 Invoice / Receipt Detail")
 
 # Session data
@@ -46,12 +46,16 @@ with col2:
         # later: delete from database
         # 1. Execute a SQL query or database function to drop the text records
     # db.execute("DELETE FROM receipts WHERE id = ?", (receipt_id,))
-
+        deleted = delete_receipt(receipt_data.get("id"))
     # 2. Call your cloud/file storage API to delete the image file instantly
     # storage.delete_file(receipt_image_path)
-        st.session_state.pop("uploaded_image", None)
-        st.session_state.pop("receipt_data", None)
-        st.success("Deleted successfully!")
+        if deleted:
+            st.session_state.pop("uploaded_image", None)
+            st.session_state.pop("receipt_data", None)
+            st.success("Deleted successfully!")
+        else:
+            st.error("Unable to delete receipt")
+
 # Navigation Back Home
 if st.button("← Back to Upload Screen"):
     st.switch_page("app.py")

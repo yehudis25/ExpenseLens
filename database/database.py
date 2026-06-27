@@ -1,6 +1,7 @@
 # module to make and control the database
 import sqlite3
 import os
+import json
 from utils.encryption import encrypt, decrypt
 
 # for each seperate user
@@ -79,12 +80,19 @@ def save_receipt(data, image_path=None, user_id="guest"):
         VALUES (?, ?, ?, ?, ?, ?, ?)
         """, (
             user_id,
-            encrypt(data["store"]),
-            encrypt(data["date"]),
-            encrypt(str(data["total"])),
-            encrypt(data["items"]),
-            encrypt(data.get("notes", "")),
+            (data["store"]),
+            (data["date"]),
+            (float(data["total"])),
+            json.dumps(data["items"]),
+            (data.get("notes", "")),
             image_path
+            # user_id,
+            # encrypt(data["store"]),
+            # encrypt(data["date"]),
+            # encrypt(str(data["total"])),
+            # encrypt(data["items"]),
+            # encrypt(data.get("notes", "")),
+            # image_path
         ))
         conn.commit()
         conn.close()
@@ -129,6 +137,40 @@ def get_receipts():
 
     return decrypted_rows
 
+def filter_receipts(store="Select Store", min_cost=None, max_cost=None, start_date=None, end_date=None):
+    conn = get_connection()
+    query =  "SELECT date, store, total FROM receipts WHERE 1=1"  # for building dyanimc sql query
+    parameters =[]
+
+    if store != "Select Store":
+        query += " AND store == ?"
+        parameters.append(store)
+
+    if min_cost is not None: # if min_cost is set assume max_cost is set as well
+        query += " AND total BETWEEN ? AND ?"
+        parameters.extend([min_cost, max_cost])
+
+    if start_date is not None: #if start_date is set assume end_date is set as well
+        query += " AND date BETWEEN ? AND ?"
+        parameters.extend([start_date, end_date])
+    
+    query += " ORDER BY created_at DESC"
+    rows = conn.execute(query, parameters).fetchall()
+    conn.close()
+    # decrypt the data
+    # decrypted_rows = []
+
+    # for row in rows:
+    #     decrypted_rows.append(
+    #         (
+    #             decrypt(row[0]),        # store
+    #             decrypt(row[1]),        # date
+    #             float(decrypt(row[2])), # total
+    #         )
+    #     )
+
+    # return decrypted_rows
+    return rows
 
 
 
