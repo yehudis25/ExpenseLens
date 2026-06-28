@@ -181,7 +181,11 @@ if image_input:
                 if isinstance(items_list, str):
                     # If LLM returned a string, try to parse it
                     import ast
-                    items_list = ast.literal_eval(items_list)
+                    try:
+                        items_list = ast.literal_eval(items_list)
+                    except (ValueError, SyntaxError):
+                        st.warning("AI could not format items correctly.")
+                        items_list = []
 
                 df = pd.DataFrame(items_list)
                 df = df.drop(columns=["id", "pk", "item_id"], errors="ignore")  # hide primary keys
