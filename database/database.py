@@ -94,8 +94,9 @@ def save_receipt(data, image_path=None, user_id="guest"):
             image_path
         ))
         conn.commit()
+        receipt_id = cursor.lastrowid  # get new row ID
         conn.close()
-        return True
+        return receipt_id
     except Exception as e:
         print("Receipt save error:", e)
         return False

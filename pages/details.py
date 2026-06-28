@@ -17,15 +17,20 @@ col1, col2 = st.columns(2)
 # LEFT COLUMN (IMAGE)
 # ======================
 with col1:
+    import os
+
     st.subheader("Receipt Image")
 
     image_path = receipt_data.get("image_path")
 
+    # FIX: convert to absolute path if needed
+    if image_path and not os.path.isabs(image_path):
+        image_path = os.path.join("/workspaces/ExpenseLens", image_path)
+
     if image_path and os.path.exists(image_path):
         st.image(image_path, use_container_width=True)
     else:
-        st.info("No receipt image available")
-
+        st.error(f"Image not found: {image_path}")
 # ======================
 # RIGHT COLUMN (DATA)
 # ======================
@@ -52,10 +57,6 @@ with col2:
 
     st.subheader("Notes")
     st.write(receipt_data.get("notes", ""))
-
-    if st.button("Delete Receipt"):
-        st.session_state.pop("receipt_data", None)
-        st.success("Deleted successfully!")
 
 # Navigation Back Home
 if st.button("← Back to Upload Screen"):

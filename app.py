@@ -206,30 +206,32 @@ if image_input:
 
             # save data from receipt
             if saved:
+                image_path = save_image(image_input, st.session_state["user_id"])
                 receipt = {
 
                     "store": store,
                     "date": date,
                     "total": total,
                     "items": items,
-                    "notes": notes
+                    "notes": notes,
+                    "image_path": image_path
                 }
                 st.session_state["receipt_data"] = receipt
 
 
 
                 try:
-                    # Save receipt image 
-                    image_path = save_image(image_input, st.session_state["user_id"])
 
-                    # Save receipt information into SQLite
-                    result = save_receipt(
-                    receipt,
-                    image_path,
-                    st.session_state["user_id"]
-                )
+                    receipt_id = save_receipt(
+                        data=receipt,
+                        image_path=image_path,
+                        user_id=st.session_state["user_id"]
+                    )
+
+                    st.session_state["receipt_data"]["id"] = receipt_id
+                
                     # did it save properly?
-                    if result:
+                    if receipt_id:
                         st.success(
                             "Receipt saved permanently!"
                         )
