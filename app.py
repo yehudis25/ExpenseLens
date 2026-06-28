@@ -5,20 +5,17 @@ import os
 from PIL import Image, UnidentifiedImageError
 import io
 from utils.receipt_processor import process_receipt, receipt_check, extract_raw_text
-from database.database import create_tables
-
-create_tables()
-# create different user (database) for each user - to be continued...
-if "user_id" not in st.session_state:
-    st.session_state["user_id"] = "user1"
-
-# get database
 from database.database import (
     create_tables,
     save_receipt,
     save_image,
     save_feedback
 )
+create_tables()
+# create different user (database) for each user - to be continued...
+if "user_id" not in st.session_state:
+    st.session_state["user_id"] = "user1"
+
 
 # configure the page, must run first
 st.set_page_config(

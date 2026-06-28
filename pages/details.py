@@ -7,8 +7,6 @@ st.title("🧾 Invoice / Receipt Detail")
 receipt_image = st.session_state.get("uploaded_image")
 receipt_data = st.session_state.get("receipt_data")
 
-if receipt_image is None:
-    st.info("No receipt image available")
 if receipt_data is None:
     st.warning("No receipt loaded")
     st.stop()
@@ -16,7 +14,11 @@ col1, col2 = st.columns(2)
 
 with col1:
     st.subheader("Receipt Image")
-    st.image(receipt_image, width="stretch")
+
+    if receipt_image:
+        st.image(receipt_image, width="stretch")
+    else:
+        st.info("No receipt image available")
 
 with col2:
     st.subheader("Receipt Information")
