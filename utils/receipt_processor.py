@@ -14,7 +14,7 @@ def get_reader():
 def warm_llm():
     try:
         ollama.generate(
-            model="llama3.2:3b",
+            model="llama3.2:1b",
             prompt="ping",
             options={"num_predict": 1}
         )
