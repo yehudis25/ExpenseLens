@@ -133,17 +133,22 @@ if image_input:
        # OCR + VALIDATION
         if "receipt_data" not in st.session_state:
 
+            # First extract text
             with st.spinner("Analyzing document..."):
                 extracted_text = extract_raw_text(image_input)
 
-                # Run LLM validator
-                if not receipt_check(extracted_text):
-                    st.error("This does not appear to be a receipt or invoice.")
-                    st.stop()
+            # Run LLM validator OUTSIDE spinner
+            if not receipt_check(extracted_text):
+                st.error("This does not appear to be a receipt or invoice.")
+                st.stop()
 
+            # Now run LLM extraction
+            with st.spinner("Extracting structured data..."):
                 st.session_state["receipt_data"] = process_receipt(image_input)
+
             st.success("Valid receipt detected! Extracting structured data...")
-        data = st.session_state["receipt_data"]
+
+            data = st.session_state["receipt_data"]
 
         st.divider()
         st.subheader("✏️ Review & Edit AI Extraction")
