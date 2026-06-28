@@ -113,17 +113,10 @@ if sample != "None":
 
 image_input = None
 
-if uploaded_file:
+image_input = uploaded_file
 
-    # sample file (string path)
-    if isinstance(uploaded_file, str):
-        image_input = uploaded_file
-    elif isinstance(image_input, str):
-        img = Image.open(image_input)
-        img_np = np.array(img)
-    # uploaded image file (Streamlit object)
-    else:
-        image_input = uploaded_file
+if isinstance(sample, str) and sample != "None":
+    image_input = sample
 if image_input:
     # detect new receipt
     current_file = str(image_input)

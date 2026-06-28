@@ -48,25 +48,30 @@ def create_tables():
     conn.commit()
     conn.close()
 
-
-def save_image(uploaded_file, user_id="guest"):
+def save_image(image_input, user_id):
     """
-    save image to dtbs
+    save image
     """
-    try:
-        folder = os.path.join(UPLOAD_FOLDER, user_id)
-        os.makedirs(folder, exist_ok=True)
+    import os
+    from PIL import Image
+    import io
 
-        path = os.path.join(folder, uploaded_file.name)
+    if isinstance(image_input, str):
+        # already a file path
+        return image_input
 
-        with open(path, "wb") as f:
-            f.write(uploaded_file.getbuffer())
+    # Streamlit UploadedFile
+    filename = image_input.name
 
-        return path
+    save_path = os.path.join("uploads", user_id)
+    os.makedirs(save_path, exist_ok=True)
 
-    except Exception as e:
-        print("Image save error:", e)
-        return None
+    full_path = os.path.join(save_path, filename)
+
+    image = Image.open(image_input)
+    image.save(full_path)
+
+    return full_path
 
 def save_receipt(data, image_path=None, user_id="guest"):
     """
