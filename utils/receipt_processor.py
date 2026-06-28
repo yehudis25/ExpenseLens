@@ -24,6 +24,21 @@ def warm_llm():
 
 warm_llm()
 
+from transformers import pipeline
+import torch
+
+USE_GPU = torch.cuda.is_available()
+DEVICE = 0 if USE_GPU else -1
+
+# Use a lightweight Image-to-Text (OCR) pipeline
+MODEL_NAME = "microsoft/trocr-base-printed" 
+
+pipe = pipeline(
+    "image-to-text",
+    model=MODEL_NAME,
+    device=DEVICE
+)
+
 def receipt_check(text: str) -> bool:
     """
     Very simple keyword-based receipt/invoice detector.
@@ -81,14 +96,23 @@ def structure_text_with_llm(raw_text: str) -> dict:
     prompt = f"""
     You are a data extraction assistant for the ExpenseLens app.
     Analyze the following raw OCR text extracted from a store receipt and return a valid JSON object.
+    
+    Return ONLY valid JSON.
 
-    The JSON object MUST contain exactly these keys:
-    - "store"
-    - "date"
-    - "total"
-    - "items"
+    Format:
+    {{
+     "store": "",
+     "date": "",
+     "total": 0,
+     "items": [
+       {{
+        "name": "",
+        "price": 0
+       }}
+     ]
+    }}
 
-    Only output the JSON object. No commentary.
+    Do not include explanations.
 
     Raw OCR Text:
     {raw_text}
