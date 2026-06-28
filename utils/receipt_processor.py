@@ -5,39 +5,35 @@ import re
 import numpy as np
 from PIL import Image
 import streamlit as st
-
-@st.cache_resource
-def get_reader():
-    return easyocr.Reader(['en'], gpu=False)
-
-@st.cache_resource
-def warm_llm():
-    try:
-        ollama.generate(
-            model="llama3.2:3b",
-            prompt="ping",
-            options={"num_predict": 1}
-        )
-        return "LLM warmed"
-    except:
-        return "LLM unavailable"
-
-warm_llm()
-
-from transformers import pipeline
 import torch
+from transformers import pipeline
 
 USE_GPU = torch.cuda.is_available()
 DEVICE = 0 if USE_GPU else -1
 
-# Use a lightweight Image-to-Text (OCR) pipeline
-MODEL_NAME = "microsoft/trocr-base-printed" 
+@st.cache_resource
+def get_reader():
+    return easyocr.Reader(['en'], gpu=USE_GPU)
 
-pipe = pipeline(
-    "image-to-text",
-    model=MODEL_NAME,
-    device=DEVICE
-)
+@st.cache_resource
+def get_hf_pipeline():
+    return pipeline(
+        "image-to-text", 
+        model="microsoft/trocr-base-printed", 
+        device=DEVICE
+    )
+def warm_llm():
+    try:
+        ollama.generate(
+            model="llama3.2:1b",
+            prompt="ping",
+            options={"num_predict": 1}
+        )
+    except Exception as e:
+        print(f"LLM warming skipped or failed: {e}")
+
+warm_llm()
+
 
 def receipt_check(text: str) -> bool:
     """

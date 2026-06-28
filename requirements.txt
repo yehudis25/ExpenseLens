@@ -8,3 +8,5 @@ opencv-python-headless
 cryptography
 pdf2image
 ollama
+transformers
+torch
