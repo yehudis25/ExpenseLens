@@ -1,25 +1,34 @@
 # page with details of receipt
 import streamlit as st
+import os
 
 st.title("🧾 Invoice / Receipt Detail")
 
 # Session data
-receipt_image = st.session_state.get("uploaded_image")
 receipt_data = st.session_state.get("receipt_data")
 
 if receipt_data is None:
     st.warning("No receipt loaded")
     st.stop()
+
 col1, col2 = st.columns(2)
 
+# ======================
+# LEFT COLUMN (IMAGE)
+# ======================
 with col1:
     st.subheader("Receipt Image")
 
-    if receipt_image:
-        st.image(receipt_image, width="stretch")
+    image_path = receipt_data.get("image_path")
+
+    if image_path and os.path.exists(image_path):
+        st.image(image_path, use_container_width=True)
     else:
         st.info("No receipt image available")
 
+# ======================
+# RIGHT COLUMN (DATA)
+# ======================
 with col2:
     st.subheader("Receipt Information")
 
@@ -33,6 +42,7 @@ with col2:
     st.write(f"${float(receipt_data.get('total') or 0):.2f}")
 
     st.subheader("Items")
+
     items = receipt_data.get("items", [])
 
     if isinstance(items, list):
@@ -44,15 +54,9 @@ with col2:
     st.write(receipt_data.get("notes", ""))
 
     if st.button("Delete Receipt"):
-        # later: delete from database
-        # 1. Execute a SQL query or database function to drop the text records
-    # db.execute("DELETE FROM receipts WHERE id = ?", (receipt_id,))
-
-    # 2. Call your cloud/file storage API to delete the image file instantly
-    # storage.delete_file(receipt_image_path)
-        st.session_state.pop("uploaded_image", None)
         st.session_state.pop("receipt_data", None)
         st.success("Deleted successfully!")
+
 # Navigation Back Home
 if st.button("← Back to Upload Screen"):
     st.switch_page("app.py")
