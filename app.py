@@ -5,20 +5,17 @@ import os
 from PIL import Image, UnidentifiedImageError
 import io
 from utils.receipt_processor import process_receipt, receipt_check, extract_raw_text
-from database.database import create_tables
-
-create_tables()
-# create different user (database) for each user - to be continued...
-if "user_id" not in st.session_state:
-    st.session_state["user_id"] = "user1"
-
-# get database
 from database.database import (
     create_tables,
     save_receipt,
     save_image,
     save_feedback
 )
+create_tables()
+# create different user (database) for each user - to be continued...
+if "user_id" not in st.session_state:
+    st.session_state["user_id"] = "user1"
+
 
 # configure the page, must run first
 st.set_page_config(
@@ -92,7 +89,7 @@ st.markdown("""
 # user can upload a file
 uploaded_file = st.file_uploader(
     "Upload a receipt image",
-    type=["png", "jpg", "jpeg", "pdf", "docx"],
+    type=["png", "jpg", "jpeg"],
     help="Upload a clear image of a receipt for automatic information extraction."
 )
 
@@ -116,17 +113,10 @@ if sample != "None":
 
 image_input = None
 
-if uploaded_file:
+image_input = uploaded_file
 
-    # sample file (string path)
-    if isinstance(uploaded_file, str):
-        image_input = uploaded_file
-    elif isinstance(image_input, str):
-        img = Image.open(image_input)
-        img_np = np.array(img)
-    # uploaded image file (Streamlit object)
-    else:
-        image_input = uploaded_file
+if isinstance(sample, str) and sample != "None":
+    image_input = sample
 if image_input:
     # detect new receipt
     current_file = str(image_input)
@@ -184,7 +174,11 @@ if image_input:
                 if isinstance(items_list, str):
                     # If LLM returned a string, try to parse it
                     import ast
-                    items_list = ast.literal_eval(items_list)
+                    try:
+                        items_list = ast.literal_eval(items_list)
+                    except (ValueError, SyntaxError):
+                        st.warning("AI could not format items correctly.")
+                        items_list = []
 
                 df = pd.DataFrame(items_list)
                 df = df.drop(columns=["id", "pk", "item_id"], errors="ignore")  # hide primary keys
