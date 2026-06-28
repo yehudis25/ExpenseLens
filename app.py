@@ -92,7 +92,7 @@ st.markdown("""
 # user can upload a file
 uploaded_file = st.file_uploader(
     "Upload a receipt image",
-    type=["png", "jpg", "jpeg", "pdf", "docx"],
+    type=["png", "jpg", "jpeg"],
     help="Upload a clear image of a receipt for automatic information extraction."
 )
 
