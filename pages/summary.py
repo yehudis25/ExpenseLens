@@ -67,9 +67,6 @@ def filter_receipts_by_date(receipts, start, end):
     return [receipt for receipt in receipts if start <= receipt[0] <= end]
 
 def filter_for_month(cur_year, cur_month):
-    # print(receipt for receipt in extract_data() if str(receipt[2]).split("/")[0])
-    for receipt in extract_data():
-        print(str(receipt[0].month))
     return [receipt for receipt in extract_data() if int(receipt[0].month)==cur_month and receipt[0].year == cur_year ]
 
 
