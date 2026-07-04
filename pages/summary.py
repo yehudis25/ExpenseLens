@@ -66,6 +66,14 @@ def extract_data():
 def filter_receipts_by_date(receipts, start, end):
     return [receipt for receipt in receipts if start <= receipt[0] <= end]
 
+def filter_for_month(cur_year, cur_month):
+    # print(receipt for receipt in extract_data() if str(receipt[2]).split("/")[0])
+    for receipt in extract_data():
+        print(str(receipt[0].month))
+    return [receipt for receipt in extract_data() if int(receipt[0].month)==cur_month and receipt[0].year == cur_year ]
+
+
+
 def filter_receipts_by_cost(receipts, min_val, max_val):
     return [receipt for receipt in receipts if min_val <= receipt[2] <= max_val]
 
@@ -87,6 +95,10 @@ def search_receipts(selected):  # will need to implement properly once receipts 
 curr = currency()
 rows = extract_data()
 default_display = True
+start_date = None
+end_date= None
+min_cost = None
+max_cost = None
 # Filter options
 filter_store_option = st.checkbox("Filter by store")
 if filter_store_option:
@@ -99,8 +111,8 @@ if filter_store_option:
 
 filter_cost_option = st.checkbox("Filter by cost")
 if filter_cost_option:
-  min_cost = st.number_input("Enter minimum cost", min_value=1, max_value=2000000, step=1, value=1000)
-  max_cost = st.number_input("Enter maximum cost", min_value=1, max_value=2000000, step=1, value=5000)
+  min_cost = st.number_input("Enter minimum cost", min_value=1, max_value=2000000, step=1, value=80)
+  max_cost = st.number_input("Enter maximum cost", min_value=1, max_value=2000000, step=1, value=300)
   default_display = False
 
 filter_date_option = st.checkbox("Filter by date")
@@ -120,7 +132,7 @@ if filter_cost_option or filter_date_option or filter_store_option:
   btn_filter = st.button(f"Filter receipts")
   # Filtering receipts based on user input
   if btn_filter:
-    if filter_store_option: # use receipts that have already been filtered by store
+    if filter_store_option: 
         rows_to_search = [receipt for receipt in extract_data() if receipt[1] == user_store]
     else:
       rows_to_search = extract_data() # use all receipts
@@ -131,22 +143,41 @@ if filter_cost_option or filter_date_option or filter_store_option:
 
     st.session_state.rows = rows_to_search
     rows = st.session_state.rows
-    if len(rows) == 0:
-      st.write("Sorry no matching receipts were found - please enter different filtering conditions")
+
+    if len(rows) == 0: # check no reciepts fit filtering conditions
+        if (start_date and start_date>end_date): # check if invalid date range was used
+            st.error("Start date is after end date - please enter valid date range")
+        elif (min_cost and min_cost>max_cost): # check if invalid cost range was used
+            st.error("Invalid costs: minimum cost is larger than maximum cost - please enter valid cost range")
+        else:
+            # defualt message if no errors were identified
+            st.write("Sorry no matching receipts were found - please enter different filtering conditions")
 
 # rendering reciepts in table
 if not filter_store_option and not filter_date_option and not filter_cost_option:
   default_display = True
+
+# if no filters are applied show most receipts with most recent dates
+if default_display:
+    rows = filter_for_month(date.today().year, date.today().month) # find receipts from current month
+    if (len(rows)>0): # if there are receipts from current month display relevant message 
+        st.write(f"Receipts from {date.today().strftime("%B")}")
+    else: # otherwise find most recent receipts from particular month and year and display message
+        if len(extract_data())>0:
+            rows = filter_for_month(extract_data()[0][0].year, extract_data()[0][0].month)
+            st.write(f"Most recent receipts from {extract_data()[0][0].strftime("%B")} {extract_data()[0][0].year}")
+        else: # if there are no receipts then show relevant message
+            st.write("No invoices or receipts have been uploaded")
+
+#   default_display = True
 
 # build dataframe
 st.session_state.df = pd.DataFrame(rows, columns=["Date", "Store", "Total Cost"])
 st.session_state.df.index =  range(1, len(st.session_state.df)+1)
 df = st.session_state.df
 
-# if no filters are applied show message that receipts from current month are displayed
-if default_display:
-  st.write(f"Receipts from {date.today().strftime('%B')}")
-  default_display = True
+
+
 
 # show receipts
 st.data_editor(st.session_state.df, disabled=True, column_config ={"Total Cost": st.column_config.NumberColumn("Total Cost", format = f"{curr} %.2f")})
