@@ -95,7 +95,7 @@ if filter_store_option:
   if user_store and user_store != "Select store":
       default_display = False
       # show receipts with matching store that user selected
-      rows = [receipt for receipt in extract_data() if receipt[1] == user_store]
+    #   rows = [receipt for receipt in extract_data() if receipt[1] == user_store]
 
 filter_cost_option = st.checkbox("Filter by cost")
 if filter_cost_option:
@@ -110,18 +110,18 @@ if filter_date_option:
   default_display = False
 
 # button to implement cost and date filtering
-if filter_cost_option or filter_date_option:
-  if filter_cost_option:
-      btn_message = "cost"
-      if filter_date_option:
-          btn_message += " and date"
-  else:
-      btn_message = "date"
-  btn_filter = st.button(f"Filter receipts by {btn_message}")
+if filter_cost_option or filter_date_option or filter_store_option:
+#   if filter_cost_option:
+#       btn_message = "cost"
+#       if filter_date_option:
+#           btn_message += " and date"
+#   else:
+#       btn_message = "date"
+  btn_filter = st.button(f"Filter receipts")
   # Filtering receipts based on user input
   if btn_filter:
     if filter_store_option: # use receipts that have already been filtered by store
-        rows_to_search = rows
+        rows_to_search = [receipt for receipt in extract_data() if receipt[1] == user_store]
     else:
       rows_to_search = extract_data() # use all receipts
     if filter_date_option:
