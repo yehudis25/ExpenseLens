@@ -116,7 +116,7 @@ def structure_text_with_llm(raw_text: str) -> dict:
 
     try:
         response = ollama.generate(
-            model='llama3.2:3b',
+            model='llama3.2:1b',
             prompt=prompt,
             options={"temperature": 0.0, "num_predict": 512}
         )
