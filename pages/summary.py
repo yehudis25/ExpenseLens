@@ -79,6 +79,20 @@ def search_receipts(selected):  # will need to implement properly once receipts 
       "items": "",
       "notes": ""
     }
+    #     for r in st.session_state.all_receipts:
+    #     if r[2]==selected[0] and r[4]==selected[1] and r[3]==selected[2]:
+    #         print(selected[4])
+    #         receipt= r
+    # return [receipt for receipt in st.session_state.all_receipts if receipt[0]==selected_id]
+    # if receipt:
+    #     return { # just for now - will add id in data to use to search for row and send to screen
+    #     "store": receipt[2],#name
+    #     "date":  receipt[3],#date,
+    #     "total": receipt[4],#cost,
+    #     "items": receipt[5],
+    #     "notes": receipt[6],
+    #     "image_path": receipt[7] #(id, user_id, store, date, total, items, notes, image_path, created_at)
+    #     }
 
 curr = currency()
 # manage default display and rows for filtering 
@@ -175,6 +189,7 @@ st.data_editor(st.session_state.df, disabled=True, column_config ={"Total Cost":
 
 # select specific reciept to show details
 selected_receipt = st.selectbox("Select a receipt", ["Select receipt"] + list(set(f"{receipt[1]} - {curr}{receipt[2]:.2f} ({receipt[0]})"  for receipt in rows)))
+
 if selected_receipt and selected_receipt != "Select receipt":
     st.session_state.receipt_data = search_receipts(selected_receipt)
     st.switch_page("pages/details.py")
