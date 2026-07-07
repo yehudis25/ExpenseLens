@@ -13,9 +13,6 @@ if receipt_data is None:
 
 col1, col2 = st.columns(2)
 
-# ======================
-# LEFT COLUMN (IMAGE)
-# ======================
 with col1:
     import os
 
@@ -31,9 +28,7 @@ with col1:
         st.image(image_path, use_container_width=True)
     else:
         st.error(f"Image not found: {image_path}")
-# ======================
-# RIGHT COLUMN (DATA)
-# ======================
+
 with col2:
     st.subheader("Receipt Information")
 
