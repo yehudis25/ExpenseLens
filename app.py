@@ -28,15 +28,18 @@ st.set_page_config(
 # logo
 LOGO_PATH = "/workspaces/ExpenseLens/assets/Logo.png"
 
-col1, col2 = st.columns([1, 4])
+col1, col2 = st.columns([3, 4])  # wider column for the logo
+
 with col1:
     if os.path.exists(LOGO_PATH):
-        st.image(LOGO_PATH, width=1000)
+        st.image(LOGO_PATH, width=350)
     else:
         st.markdown("# 🔍")
+
 with col2:
     st.title("ExpenseLens")
     st.caption("Precision Expense Tracking & Receipt Analysis")
+
 st.markdown("""
 ### Welcome to ExpenseLens
 
