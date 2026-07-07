@@ -25,15 +25,13 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-
-
 # logo
 LOGO_PATH = "/workspaces/ExpenseLens/assets/Logo.png"
 
 col1, col2 = st.columns([1, 4])
 with col1:
     if os.path.exists(LOGO_PATH):
-        st.image(LOGO_PATH, width=80)
+        st.image(LOGO_PATH, width=1000)
     else:
         st.markdown("# 🔍")
 with col2:

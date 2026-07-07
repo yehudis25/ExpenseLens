@@ -157,6 +157,31 @@ if selected_receipt and selected_receipt != "Select receipt":
     st.session_state.receipt_data = search_receipts(selected_receipt)
     st.switch_page("pages/details.py")
 
+# budget!
+receipts = extract_data()  # lists of reciepts so budget can access it
+budget = st.number_input(
+    "Set your monthly budget",
+    min_value=0.0,
+    value=500.0,
+    step=10.0
+)
+
+if "budget" not in st.session_state:
+    st.session_state.budget = budget
+else:
+    st.session_state.budget = budget
+
+total_spent = sum(r[2] for r in receipts)
+remaining = st.session_state.budget - total_spent
+
+st.metric("Total Spent", f"${total_spent:.2f}")
+st.metric("Remaining Budget", f"${remaining:.2f}")
+
+if remaining < 0:
+    st.error("You are over budget.")
+else:
+    st.success("You are within your budget.")
+
 # chart to visualize data
 if not df.empty:
     st.subheader("📈 Spending Breakdown")

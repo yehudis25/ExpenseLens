@@ -7,6 +7,8 @@ from PIL import Image
 import streamlit as st
 import torch
 from transformers import pipeline
+from pydantic import BaseModel, Field, ValidationError
+from typing import List
 
 USE_GPU = torch.cuda.is_available()
 DEVICE = 0 if USE_GPU else -1
@@ -22,6 +24,7 @@ def get_hf_pipeline():
         model="microsoft/trocr-base-printed", 
         device=DEVICE
     )
+
 def warm_llm():
     try:
         ollama.generate(
@@ -33,7 +36,6 @@ def warm_llm():
         print(f"LLM warming skipped or failed: {e}")
 
 warm_llm()
-
 
 def receipt_check(text: str) -> bool:
     """
@@ -59,7 +61,6 @@ def receipt_check(text: str) -> bool:
     # If any receipt or invoice keyword appears → treat as valid
     return any(k in text_lower for k in receipt_keywords + invoice_keywords)
 
-
 def extract_raw_text(image_input) -> str:
     """
     Uses EasyOCR to pull raw text lines out of the uploaded receipt image.
@@ -84,10 +85,21 @@ def extract_raw_text(image_input) -> str:
     except Exception as e:
         raise RuntimeError(f"EasyOCR text extraction failed: {str(e)}")
 
+# Pydantic models
+class Item(BaseModel):
+    name: str = Field(default="")
+    price: float = Field(default=0.0)
+
+class Receipt(BaseModel):
+    store: str = Field(default="")
+    date: str = Field(default="")
+    total: float = Field(default=0.0)
+    items: List[Item] = Field(default_factory=list)
+
 def structure_text_with_llm(raw_text: str) -> dict:
     """
     Sends OCR text to Llama and safely extracts valid JSON.
-    Repairs common LLM formatting issues before json.loads().
+    Repairs common LLL formatting issues before json.loads().
     """
     prompt = f"""
     You are a data extraction assistant for the ExpenseLens app.
@@ -133,7 +145,11 @@ def structure_text_with_llm(raw_text: str) -> dict:
         # Remove trailing backslashes that break JSON
         json_text = re.sub(r"\\\s*$", "", json_text, flags=re.MULTILINE)
         json_text = json_text.replace('\\"', '"')
-        return json.loads(json_text)
+        data = json.loads(json_text)
+
+        # pydantic validation
+        validated = Receipt(**data)
+        return validated.model_dump()
 
     except Exception as e:
         print("=" * 50)
