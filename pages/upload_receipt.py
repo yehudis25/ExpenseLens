@@ -8,17 +8,12 @@ from utils.receipt_processor import process_receipt, receipt_check, extract_raw_
 from database.database import (
     save_receipt,
     save_image,
-    save_feedback
 )
 
 # make sure user is logged in
 if "user_id" not in st.session_state:
     st.warning("Please login first")
-
-    if st.button("Go to Login"):
-        st.switch_page("app.py")
-
-    st.stop()
+    st.switch_page("app.py")
 
 
 
@@ -239,46 +234,3 @@ if image_input:
 if st.button("View Receipts"):
     st.switch_page("pages/summary.py")
 
-
-# rate activities here
-st.divider()
-st.subheader("Feedback")
-
-with st.form("feedback_form"):
-    rating = st.slider(
-        "Rate your experience",
-        min_value=1,
-        max_value=5,
-        value=3
-    )
-    comment = st.text_area(
-        "Leave a comment here:"
-    )
-
-    submitted = st.form_submit_button("Submit Feedback")
-
-if submitted:
-    # save feedback to dtbs
-    try:
-        save_feedback(
-            rating,
-            comment
-        )
-
-
-        st.success(
-            "Thank you for your feedback!"
-        )
-
-        st.write(
-            "Your rating:",
-            "⭐" * rating
-        )
-
-
-    except Exception as e:
-        st.error(
-            "Could not save feedback"
-        )
-
-        st.write(e)

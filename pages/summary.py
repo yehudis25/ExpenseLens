@@ -4,6 +4,10 @@ import pandas as pd
 from datetime import date
 import streamlit.components.v1 as components
 from database.database import get_receipts
+
+if "user_id" not in st.session_state:
+    st.warning("Please login first")
+    st.switch_page("app.py")
 st.markdown("""
 <style>
 @media print {
