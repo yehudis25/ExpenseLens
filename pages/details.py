@@ -32,7 +32,11 @@ with col1:
         with open(image_path, "rb") as f:
             encrypted_bytes = f.read()
 
-        image_bytes = decrypt_bytes(encrypted_bytes)
+        try:
+            image_bytes = decrypt_bytes(encrypted_bytes)
+        except:
+            # old images saved before encryption
+            image_bytes = encrypted_bytes
         image = Image.open(BytesIO(image_bytes))
 
         st.image(image, use_container_width=True)

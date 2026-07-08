@@ -56,10 +56,14 @@ def extract_data():
 
     for r in receipts:
         # r = (id, user_id, store, date, total, items, notes, image_path, created_at)
-        try:
-            rows.append((pd.to_datetime(r[3]).date(), r[2], float(r[4]), r[0]))
-        except:
+
+        parsed_date = pd.to_datetime(r[3], errors="coerce")
+
+        if pd.isna(parsed_date):
             continue
+
+        rows.append((parsed_date.date(), r[2], float(r[4] or 0), r[0]))
+
     return rows
 
 def filter_receipts_by_date(receipts, start, end):
@@ -76,11 +80,10 @@ def currency(): # just for reference will used based off of pic - assume will on
     return "$"
 
 def search_receipts(selected):
+    receipt_id = int(selected.split("ID:")[1])
+
     for receipt in st.session_state.all_receipts_full:
-
-        display_name = f"{receipt[2]} - ${receipt[4]:.2f} ({receipt[3]})"
-
-        if display_name == selected:
+        if receipt[0] == receipt_id:
             return {
                 "id": receipt[0],
                 "user_id": receipt[1],
@@ -94,14 +97,12 @@ def search_receipts(selected):
             }
 
     return None
-
 curr = currency()
 # manage default display and rows for filtering 
 if "default_display" not in st.session_state:
     st.session_state.default_display = True
 
-if "all_receipts" not in st.session_state:
-    st.session_state.all_receipts = extract_data()
+st.session_state.all_receipts = extract_data()
 
 if "all_receipts_full" not in st.session_state:
     st.session_state.all_receipts_full = get_receipts(
@@ -197,7 +198,7 @@ st.data_editor(st.session_state.df, disabled=True, column_config ={"Total Cost":
 selected_receipt = st.selectbox(
     "Select a receipt",
     ["Select receipt"] + [
-        f"{receipt[1]} - ${receipt[2]:.2f} ({receipt[0]})"
+        f"{receipt[1]} - ${receipt[2]:.2f} ({receipt[0]}) | ID:{receipt[3]}"
         for receipt in rows
     ]
 )

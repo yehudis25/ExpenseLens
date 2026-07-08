@@ -187,8 +187,13 @@ if image_input:
 
             saved = st.form_submit_button("💾 Save Receipt")
 
+
             # save data from receipt
             if saved:
+                if not store or not date:
+                    st.error("Receipt information is missing. Please fill in store and date before saving.")
+                    st.stop()
+
                 image_path = save_image(image_input, st.session_state["user_id"])
                 receipt = {
 
