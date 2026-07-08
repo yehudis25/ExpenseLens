@@ -1,7 +1,7 @@
 # module to make and control the database
 import sqlite3
 import os
-from utils.encryption import encrypt, decrypt
+from utils.encryption import encrypt, decrypt, encrypt_bytes
 import json
 
 # for each seperate user
@@ -50,26 +50,31 @@ def create_tables():
 
 def save_image(image_input, user_id):
     """
-    save image
+    Save an encrypted receipt image and return its file path.
     """
     import os
-    from PIL import Image
-    import io
 
     if isinstance(image_input, str):
         # already a file path
         return image_input
 
     # Streamlit UploadedFile
-    filename = image_input.name
+    filename = os.path.splitext(image_input.name)[0] + ".enc"
 
     save_path = os.path.join("uploads", user_id)
     os.makedirs(save_path, exist_ok=True)
 
     full_path = os.path.join(save_path, filename)
 
-    image = Image.open(image_input)
-    image.save(full_path)
+    # Read the uploaded image as bytes
+    image_bytes = image_input.read()
+
+    # Encrypt the bytes
+    encrypted_bytes = encrypt_bytes(image_bytes)
+
+     # Save encrypted file
+    with open(full_path, "wb") as f:
+        f.write(encrypted_bytes)
 
     return full_path
 

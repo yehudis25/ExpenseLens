@@ -20,3 +20,17 @@ def decrypt(token: str) -> str:
         return None
     cipher = get_cipher()
     return cipher.decrypt(token.encode()).decode()
+
+# Encrypt bytes (for images)
+def encrypt_bytes(data: bytes) -> bytes:
+    if data is None:
+        return None
+    cipher = get_cipher()
+    return cipher.encrypt(data)
+
+# Decrypt bytes (for images)
+def decrypt_bytes(data: bytes) -> bytes:
+    if data is None:
+        return None
+    cipher = get_cipher()
+    return cipher.decrypt(data)
