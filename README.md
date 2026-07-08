@@ -83,6 +83,23 @@ Includes user-based data separation so each user only accesses their own expense
 6. Data is encrypted and saved into SQLite
 
 ---
+## Troubleshooting
+
+If EasyOCR is not installed correctly during setup, install it manually:
+
+```bash
+pip install easyocr
+```
+
+If you encounter dependency issues, also ensure PyTorch is installed:
+
+```bash
+pip install torch
+```
+
+After installing, restart the application.
+
+---
 
 
 
