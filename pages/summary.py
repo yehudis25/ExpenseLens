@@ -2,6 +2,7 @@
 import streamlit as st
 import pandas as pd
 from datetime import date
+from datetime import datetime
 import streamlit.components.v1 as components
 from database.database import get_receipts
 st.markdown("""
@@ -194,8 +195,25 @@ if selected_receipt and selected_receipt != "Select receipt":
     st.session_state.receipt_data = search_receipts(selected_receipt)
     st.switch_page("pages/details.py")
 
-# budget!
-receipts = extract_data()  # lists of reciepts so budget can access it
+# Load all receipts
+receipts = extract_data()  # returns decrypted rows in correct order
+
+# Determine current month
+now = datetime.now()
+current_year = now.year
+current_month = now.month
+
+# Filter receipts to current month
+monthly_receipts = []
+for r in receipts:
+    try:
+        receipt_date = datetime.strptime(r[3], "%Y-%m-%d")  # r[3] = date
+        if receipt_date.year == current_year and receipt_date.month == current_month:
+            monthly_receipts.append(r)
+    except Exception:
+        pass
+
+# Budget input
 budget = st.number_input(
     "Set your monthly budget",
     min_value=0.0,
@@ -203,21 +221,21 @@ budget = st.number_input(
     step=10.0
 )
 
-if "budget" not in st.session_state:
-    st.session_state.budget = budget
-else:
-    st.session_state.budget = budget
+st.session_state.budget = budget
 
-total_spent = sum(r[2] for r in receipts)
+# Calculate monthly spending
+total_spent = sum(r[4] for r in monthly_receipts)  # r[4] = total
 remaining = st.session_state.budget - total_spent
 
-st.metric("Total Spent", f"${total_spent:.2f}")
+# Display metrics
+st.metric("Total Spent (This Month)", f"${total_spent:.2f}")
 st.metric("Remaining Budget", f"${remaining:.2f}")
 
 if remaining < 0:
     st.error("You are over budget.")
 else:
     st.success("You are within your budget.")
+
 
 # chart to visualize data
 if not df.empty:

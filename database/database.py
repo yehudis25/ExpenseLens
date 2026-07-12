@@ -32,9 +32,11 @@ def create_tables():
         items TEXT,
         notes TEXT,
         image_path TEXT,
+        category TEXT,   -- NEW COLUMN
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     """)
+
 
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS feedback(
@@ -93,19 +95,23 @@ def save_receipt(data, image_path=None, user_id="guest"):
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        cursor.execute("""
-        INSERT INTO receipts
-        (user_id, store, date, total, items, notes, image_path)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (
-            user_id,
-            encrypt(data["store"]),
-            encrypt(data["date"]),
-            encrypt(str(data["total"])),
-            encrypt(json.dumps(data["items"])),
-            encrypt(data.get("notes", "")),
-            image_path
-        ))
+        cursor.execute(
+            """
+            INSERT INTO receipts
+            (user_id, store, date, total, items, notes, image_path, category)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """, 
+            (
+                user_id,
+                encrypt(data["store"]),
+                encrypt(data["date"]),
+                encrypt(str(data["total"])),
+                encrypt(json.dumps(data["items"])),
+                encrypt(data.get("notes", "")),
+                image_path,
+                encrypt(data.get("category", "Other")),
+            ),
+        )
         conn.commit()
         receipt_id = cursor.lastrowid  # get new row ID
         conn.close()
@@ -155,7 +161,8 @@ def get_receipts(user_id=None):
                 json.loads(decrypt(row[5])),        # items
                 decrypt(row[6]),        # notes
                 row[7],                 # image_path
-                row[8]                  # created_at
+                decrypt(row[8]),        # category
+                row[9]                  # created_at
             )
         )
 

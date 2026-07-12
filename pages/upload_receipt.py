@@ -184,6 +184,23 @@ if image_input:
                 "Notes",
                 st.session_state["receipt_data"].get("notes", "")
             )
+            CATEGORIES = [
+                "Advertising",
+                "Travel Expenses",
+                "Commissions",
+                "Contract Labor",
+                "Insurance",
+                "Legal Services",
+                "Office Expenses",
+                "Meals",
+                "Utilities",
+                "Other"
+            ]
+
+            category = st.selectbox(
+                "Category",
+                CATEGORIES
+            )
 
             saved = st.form_submit_button("💾 Save Receipt")
 
@@ -197,7 +214,8 @@ if image_input:
                     "total": total,
                     "items": items,
                     "notes": notes,
-                    "image_path": image_path
+                    "image_path": image_path,
+                    "category": category
                 }
                 st.session_state["receipt_data"] = receipt
 
