@@ -5,3 +5,4 @@ easyocr
 ollama
 cryptography
 pdf2image
+plotly

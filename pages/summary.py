@@ -4,6 +4,7 @@ import pandas as pd
 from datetime import date
 from datetime import datetime
 import streamlit.components.v1 as components
+import plotly.express as px
 from database.database import get_receipts
 st.markdown("""
 <style>
@@ -236,6 +237,41 @@ if remaining < 0:
 else:
     st.success("You are within your budget.")
 
+# pie chart to visualize categories expenses
+receipts = extract_data()
+
+# Determine current month
+now = datetime.now()
+current_year = now.year
+current_month = now.month
+
+# Filter receipts to current month
+monthly_receipts = []
+for r in receipts:
+    try:
+        receipt_date = datetime.strptime(r[3], "%Y-%m-%d")  # r[3] = date
+        if receipt_date.year == current_year and receipt_date.month == current_month:
+            monthly_receipts.append(r)
+    except Exception:
+        pass
+
+# Aggregate totals by category
+category_totals = {}
+
+for r in monthly_receipts:
+    category = r[8]      # category
+    total = r[4]         # total
+
+    category_totals[category] = category_totals.get(category, 0) + total
+
+# Build pie chart
+fig = px.pie(
+    names=list(category_totals.keys()),
+    values=list(category_totals.values()),
+    title="Spending by Category (This Month)"
+)
+
+st.plotly_chart(fig, use_container_width=True)
 
 # chart to visualize data
 if not df.empty:

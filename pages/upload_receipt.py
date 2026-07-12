@@ -185,6 +185,7 @@ if image_input:
                 st.session_state["receipt_data"].get("notes", "")
             )
             CATEGORIES = [
+                "",
                 "Advertising",
                 "Travel Expenses",
                 "Commissions",
@@ -199,7 +200,8 @@ if image_input:
 
             category = st.selectbox(
                 "Category",
-                CATEGORIES
+                CATEGORIES,
+                format_func=lambda x: "Select a category..." if x == "" else x
             )
 
             saved = st.form_submit_button("💾 Save Receipt")
