@@ -1,126 +1,21 @@
-<<<<<<< HEAD
 # module for startup page - where user uploades and edits receipts
-# auto start ollama server
-import subprocess
-import psutil
-import time
-
-def ensure_ollama_running():
-    # Check if Ollama is already running
-    for p in psutil.process_iter(attrs=["name"]):
-        if "ollama" in p.info["name"].lower():
-            return  # already running
-
-    # Start Ollama server
-    try:
-        subprocess.Popen(["ollama", "serve"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        time.sleep(2)  # give it a moment to boot
-    except Exception as e:
-        print("Could not start Ollama:", e)
-
-ensure_ollama_running()
-
-=======
->>>>>>> 20b5d5682c44055b720a52b0e41c4363810e272d
 import streamlit as st
-from database.database import create_tables, DB_PATH
+import pandas as pd
 import os
-<<<<<<< HEAD
-from PIL import Image, UnidentifiedImageError
-import io
+from PIL import UnidentifiedImageError
+
 from utils.receipt_processor import process_receipt, receipt_check, extract_raw_text
 from database.database import (
-    create_tables,
     save_receipt,
     save_image,
-    save_feedback
 )
 
-create_tables()
-# create different user (database) for each user - to be continued...
+# make sure user is logged in
 if "user_id" not in st.session_state:
-    st.session_state["user_id"] = "user1"
-
-=======
-import hashlib
-import sqlite3
->>>>>>> 20b5d5682c44055b720a52b0e41c4363810e272d
-
-# configure the page, must run first
-st.set_page_config(
-    page_title="ExpenseLens",
-    page_icon="🔍",
-    layout="centered",
-    initial_sidebar_state="expanded"
-)
+    st.warning("Please login first")
+    st.switch_page("app.py")
 
 
-create_tables()
-
-
-# funtion which turns the password into hashes
-def hash_password(password):
-    return hashlib.sha256(
-        password.encode()
-    ).hexdigest()
-
-# function to check if user exists
-def login(username, password):
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-
-    cursor.execute(
-        """
-        SELECT id 
-        FROM users
-        WHERE username=? AND password=?
-        """,
-        (
-            username,
-            hash_password(password)
-        )
-    )
-
-    result = cursor.fetchone()
-    conn.close()
-
-    return result[0] if result else None
-
-# function to create new account
-def create_user(username, password):
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-
-    try:
-        cursor.execute(
-            """
-            INSERT INTO users(username, password)
-            VALUES (?,?)
-            """,
-            (
-                username,
-                hash_password(password)
-            )
-        )
-
-        conn.commit()
-        return True
-
-    # no duplicate users
-    except sqlite3.IntegrityError:
-        return False
-
-    finally:
-        conn.close()
-
-# logo
-LOGO_PATH = "/workspaces/ExpenseLens/assets/Logo.png"
-
-<<<<<<< HEAD
-if os.path.exists(LOGO_PATH):
-    st.image(LOGO_PATH, width=350)
-else:
-    st.markdown("# 🔍")
 
 st.markdown("""
 ### Welcome to ExpenseLens
@@ -177,7 +72,6 @@ uploaded_file = st.file_uploader(
 )
 
 # sample receipts to test with
-import os
 
 sample_files = []
 
@@ -256,6 +150,7 @@ if image_input:
             )
 
             st.markdown("### Items")
+            items = []
             try:
             # Convert extracted items into a DataFrame
                 items_list = st.session_state["receipt_data"].get("items", [])
@@ -292,8 +187,13 @@ if image_input:
 
             saved = st.form_submit_button("💾 Save Receipt")
 
+
             # save data from receipt
             if saved:
+                if not store or not date:
+                    st.error("Receipt information is missing. Please fill in store and date before saving.")
+                    st.stop()
+
                 image_path = save_image(image_input, st.session_state["user_id"])
                 receipt = {
 
@@ -332,94 +232,10 @@ if image_input:
                     st.error(
                         "Database save failed"
                     )
+                    st.write(e)
 
 
 # add page here
 if st.button("View Receipts"):
     st.switch_page("pages/summary.py")
-
-
-# rate activities here
-=======
-col1, col2 = st.columns([3, 4])  # wider column for the logo
-
-with col1:
-    if os.path.exists(LOGO_PATH):
-        st.image(LOGO_PATH, width=350)
-    else:
-        st.markdown("# 🔍")
-
-with col2:
-    st.title("ExpenseLens")
-    st.caption("Precision Expense Tracking & Receipt Analysis")
->>>>>>> 20b5d5682c44055b720a52b0e41c4363810e272d
-st.divider()
-
-#login
-
-# checks if already logged in
-if "user_id" not in st.session_state:
-
-    st.subheader("🔐 Login")
-
-    option = st.radio(
-        "Choose an option",
-        ["Login", "Create Account"]
-    )
-
-    username = st.text_input(
-        "Username"
-    )
-
-    password = st.text_input(
-        "Password",
-        type="password"
-    )
-
-    # create a new account
-    if option == "Create Account":
-
-        if st.button("Create Account"):
-
-            if create_user(username, password):
-                st.success(
-                    "Account created! Please login."
-                )
-            else:
-                st.error(
-                    "Username already exists."
-                )
-    # try logging in
-    else:
-        if st.button("Login"):
-            user_id = login(
-                username,
-                password
-            )
-            if user_id:
-
-                st.session_state["user_id"] = user_id
-                st.success(
-                    "Login successful!"
-                )
-                st.switch_page(
-                    "pages/upload_receipt.py"
-                )
-            else:
-                st.error(
-                    "Invalid username or password"
-                )
-else:
-    st.success(
-        "You are logged in!"
-    )
-
-    if st.button("Upload Receipt"):
-        st.switch_page(
-            "pages/upload_receipt.py"
-        )
-
-    if st.button("Logout"):
-        st.session_state.clear()
-        st.rerun()
 

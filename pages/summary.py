@@ -4,6 +4,10 @@ import pandas as pd
 from datetime import date
 import streamlit.components.v1 as components
 from database.database import get_receipts
+
+if "user_id" not in st.session_state:
+    st.warning("Please login first")
+    st.switch_page("app.py")
 st.markdown("""
 <style>
 @media print {
@@ -40,19 +44,26 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+
 st.title("Receipt Summary & Reports")
 st.write("Analyze your spending habits. Use the filters below to update your report and charts.")
 
 def extract_data():
-    receipts = get_receipts(st.session_state.get("user_id", "user1"))
+    receipts = get_receipts(st.session_state["user_id"])
+    st.session_state.all_receipts_full = receipts
+
     rows = []
 
     for r in receipts:
         # r = (id, user_id, store, date, total, items, notes, image_path, created_at)
-        try:
-            rows.append((pd.to_datetime(r[3]).date(), r[2], float(r[4]), r[0]))
-        except:
+
+        parsed_date = pd.to_datetime(r[3], errors="coerce")
+
+        if pd.isna(parsed_date):
             continue
+
+        rows.append((parsed_date.date(), r[2], float(r[4] or 0), r[0]))
+
     return rows
 
 def filter_receipts_by_date(receipts, start, end):
@@ -68,39 +79,35 @@ def filter_receipts_by_cost(receipts, min_val, max_val):
 def currency(): # just for reference will used based off of pic - assume will only use one currency..
     return "$"
 
-def search_receipts(selected):  # will need to implement properly once receipts have ids
-    name = selected.split("-")[0].strip()
-    cost = selected.split("-")[1].split("(")[0].strip()[1:]
-    date = selected.split("(")[1][0:-1]
-    return { # just for now - will add id in data to use to search for row and send to screen
-      "store": name,
-      "date": date,
-      "total": cost,
-      "items": "",
-      "notes": ""
-    }
-    #     for r in st.session_state.all_receipts:
-    #     if r[2]==selected[0] and r[4]==selected[1] and r[3]==selected[2]:
-    #         print(selected[4])
-    #         receipt= r
-    # return [receipt for receipt in st.session_state.all_receipts if receipt[0]==selected_id]
-    # if receipt:
-    #     return { # just for now - will add id in data to use to search for row and send to screen
-    #     "store": receipt[2],#name
-    #     "date":  receipt[3],#date,
-    #     "total": receipt[4],#cost,
-    #     "items": receipt[5],
-    #     "notes": receipt[6],
-    #     "image_path": receipt[7] #(id, user_id, store, date, total, items, notes, image_path, created_at)
-    #     }
+def search_receipts(selected):
+    receipt_id = int(selected.split("ID:")[1])
 
+    for receipt in st.session_state.all_receipts_full:
+        if receipt[0] == receipt_id:
+            return {
+                "id": receipt[0],
+                "user_id": receipt[1],
+                "store": receipt[2],
+                "date": receipt[3],
+                "total": receipt[4],
+                "items": receipt[5],
+                "notes": receipt[6],
+                "image_path": receipt[7],
+                "created_at": receipt[8]
+            }
+
+    return None
 curr = currency()
 # manage default display and rows for filtering 
 if "default_display" not in st.session_state:
     st.session_state.default_display = True
 
-if "all_receipts" not in st.session_state:
-    st.session_state.all_receipts = extract_data()
+st.session_state.all_receipts = extract_data()
+
+if "all_receipts_full" not in st.session_state:
+    st.session_state.all_receipts_full = get_receipts(
+        st.session_state["user_id"]
+    )
 
 if "display_receipts" not in st.session_state:
     st.session_state.display_receipts = st.session_state.all_receipts
@@ -188,14 +195,20 @@ df = st.session_state.df
 st.data_editor(st.session_state.df, disabled=True, column_config ={"Total Cost": st.column_config.NumberColumn("Total Cost", format = f"{curr} %.2f")})
 
 # select specific reciept to show details
-selected_receipt = st.selectbox("Select a receipt", ["Select receipt"] + list(set(f"{receipt[1]} - {curr}{receipt[2]:.2f} ({receipt[0]})"  for receipt in rows)))
+selected_receipt = st.selectbox(
+    "Select a receipt",
+    ["Select receipt"] + [
+        f"{receipt[1]} - ${receipt[2]:.2f} ({receipt[0]}) | ID:{receipt[3]}"
+        for receipt in rows
+    ]
+)
 
 if selected_receipt and selected_receipt != "Select receipt":
     st.session_state.receipt_data = search_receipts(selected_receipt)
     st.switch_page("pages/details.py")
 
 # budget!
-receipts = extract_data()  # lists of reciepts so budget can access it
+receipts = st.session_state.all_receipts  # lists of reciepts so budget can access it
 budget = st.number_input(
     "Set your monthly budget",
     min_value=0.0,

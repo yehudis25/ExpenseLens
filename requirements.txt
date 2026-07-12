@@ -1,12 +1,7 @@
 streamlit
 pandas
-numpy
 pillow
 easyocr
 ollama
-opencv-python-headless
 cryptography
 pdf2image
-ollama
-transformers
-torch

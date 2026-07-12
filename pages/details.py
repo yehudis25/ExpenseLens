@@ -1,31 +1,45 @@
 # page with details of receipt
 import streamlit as st
 import os
+from io import BytesIO
+from PIL import Image
+from utils.encryption import decrypt_bytes
 
-st.title("🧾 Invoice / Receipt Detail")
-
-# Session data
+if "user_id" not in st.session_state:
+    st.warning("Please login first")
+    st.switch_page("app.py")
 receipt_data = st.session_state.get("receipt_data")
 
 if receipt_data is None:
     st.warning("No receipt loaded")
     st.stop()
 
+
+st.title("🧾 Invoice / Receipt Detail")
+
 col1, col2 = st.columns(2)
 
 with col1:
-    import os
 
     st.subheader("Receipt Image")
 
     image_path = receipt_data.get("image_path")
 
-    # FIX: convert to absolute path if needed
     if image_path and not os.path.isabs(image_path):
         image_path = os.path.join("/workspaces/ExpenseLens", image_path)
 
     if image_path and os.path.exists(image_path):
-        st.image(image_path, use_container_width=True)
+        with open(image_path, "rb") as f:
+            encrypted_bytes = f.read()
+
+        try:
+            image_bytes = decrypt_bytes(encrypted_bytes)
+        except:
+            # old images saved before encryption
+            image_bytes = encrypted_bytes
+        image = Image.open(BytesIO(image_bytes))
+
+        st.image(image, use_container_width=True)
     else:
         st.error(f"Image not found: {image_path}")
 
