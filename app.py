@@ -1,4 +1,3 @@
-# module for startup page - where user uploades and edits receipts
 # auto start ollama server
 import subprocess
 import psutil
@@ -22,26 +21,8 @@ ensure_ollama_running()
 import streamlit as st
 from database.database import create_tables, DB_PATH
 import os
-<<<<<<< HEAD
-from PIL import Image, UnidentifiedImageError
-import io
-from utils.receipt_processor import process_receipt, receipt_check, extract_raw_text
-from database.database import (
-    create_tables,
-    save_receipt,
-    save_image,
-    save_feedback
-)
-
-create_tables()
-# create different user (database) for each user - to be continued...
-if "user_id" not in st.session_state:
-    st.session_state["user_id"] = "user1"
-
-=======
 import hashlib
 import sqlite3
->>>>>>> 20b5d5682c44055b720a52b0e41c4363810e272d
 
 # configure the page, must run first
 st.set_page_config(
@@ -113,7 +94,6 @@ def create_user(username, password):
 # logo
 LOGO_PATH = "/workspaces/ExpenseLens/assets/Logo.png"
 
-<<<<<<< HEAD
 if os.path.exists(LOGO_PATH):
     st.image(LOGO_PATH, width=350)
 else:
@@ -337,86 +317,44 @@ if st.button("View Receipts"):
 
 
 # rate activities here
-=======
-col1, col2 = st.columns([3, 4])  # wider column for the logo
-
-with col1:
-    if os.path.exists(LOGO_PATH):
-        st.image(LOGO_PATH, width=350)
-    else:
-        st.markdown("# 🔍")
-
-with col2:
-    st.title("ExpenseLens")
-    st.caption("Precision Expense Tracking & Receipt Analysis")
->>>>>>> 20b5d5682c44055b720a52b0e41c4363810e272d
 st.divider()
+st.subheader("Feedback")
 
-#login
-
-# checks if already logged in
-if "user_id" not in st.session_state:
-
-    st.subheader("🔐 Login")
-
-    option = st.radio(
-        "Choose an option",
-        ["Login", "Create Account"]
+with st.form("feedback_form"):
+    rating = st.slider(
+        "Rate your experience",
+        min_value=1,
+        max_value=5,
+        value=3
+    )
+    comment = st.text_area(
+        "Leave a comment here:"
     )
 
-    username = st.text_input(
-        "Username"
-    )
+    submitted = st.form_submit_button("Submit Feedback")
 
-    password = st.text_input(
-        "Password",
-        type="password"
-    )
-
-    # create a new account
-    if option == "Create Account":
-
-        if st.button("Create Account"):
-
-            if create_user(username, password):
-                st.success(
-                    "Account created! Please login."
-                )
-            else:
-                st.error(
-                    "Username already exists."
-                )
-    # try logging in
-    else:
-        if st.button("Login"):
-            user_id = login(
-                username,
-                password
-            )
-            if user_id:
-
-                st.session_state["user_id"] = user_id
-                st.success(
-                    "Login successful!"
-                )
-                st.switch_page(
-                    "pages/upload_receipt.py"
-                )
-            else:
-                st.error(
-                    "Invalid username or password"
-                )
-else:
-    st.success(
-        "You are logged in!"
-    )
-
-    if st.button("Upload Receipt"):
-        st.switch_page(
-            "pages/upload_receipt.py"
+if submitted:
+    # save feedback to dtbs
+    try:
+        save_feedback(
+            rating,
+            comment
         )
 
-    if st.button("Logout"):
-        st.session_state.clear()
-        st.rerun()
 
+        st.success(
+            "Thank you for your feedback!"
+        )
+
+        st.write(
+            "Your rating:",
+            "⭐" * rating
+        )
+
+
+    except Exception as e:
+        st.error(
+            "Could not save feedback"
+        )
+
+        st.write(e)
