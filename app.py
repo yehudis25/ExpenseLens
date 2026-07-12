@@ -1,4 +1,24 @@
 # module for startup page - where user uploades and edits receipts
+# auto start ollama server
+import subprocess
+import psutil
+import time
+
+def ensure_ollama_running():
+    # Check if Ollama is already running
+    for p in psutil.process_iter(attrs=["name"]):
+        if "ollama" in p.info["name"].lower():
+            return  # already running
+
+    # Start Ollama server
+    try:
+        subprocess.Popen(["ollama", "serve"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        time.sleep(2)  # give it a moment to boot
+    except Exception as e:
+        print("Could not start Ollama:", e)
+
+ensure_ollama_running()
+
 import streamlit as st
 import pandas as pd
 import os
@@ -11,6 +31,7 @@ from database.database import (
     save_image,
     save_feedback
 )
+
 create_tables()
 # create different user (database) for each user - to be continued...
 if "user_id" not in st.session_state:
@@ -28,17 +49,10 @@ st.set_page_config(
 # logo
 LOGO_PATH = "/workspaces/ExpenseLens/assets/Logo.png"
 
-col1, col2 = st.columns([3, 4])  # wider column for the logo
-
-with col1:
-    if os.path.exists(LOGO_PATH):
-        st.image(LOGO_PATH, width=350)
-    else:
-        st.markdown("# 🔍")
-
-with col2:
-    st.title("ExpenseLens")
-    st.caption("Precision Expense Tracking & Receipt Analysis")
+if os.path.exists(LOGO_PATH):
+    st.image(LOGO_PATH, width=350)
+else:
+    st.markdown("# 🔍")
 
 st.markdown("""
 ### Welcome to ExpenseLens
