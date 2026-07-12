@@ -43,7 +43,7 @@ st.markdown("""
 
 st.title("Receipt Summary & Reports")
 st.write("Analyze your spending habits. Use the filters below to update your report and charts.")
-
+st.caption("💡 To apply filter changes, click **Filter receipts** button")
 def extract_data():
     receipts = get_receipts(st.session_state.get("user_id", "user1"))
     rows = []
@@ -59,8 +59,8 @@ def extract_data():
 def filter_receipts_by_date(receipts, start, end):
     return [receipt for receipt in receipts if start <= receipt[0] <= end]
 
-def filter_for_month(cur_year, cur_month):
-    return [receipt for receipt in st.session_state.all_receipts if int(receipt[0].month)==cur_month and receipt[0].year == cur_year ]
+def filter_for_month(year, month):
+    return [receipt for receipt in st.session_state.all_receipts if int(receipt[0].month)==month and receipt[0].year == year ]
 
 
 def filter_receipts_by_cost(receipts, min_val, max_val):
@@ -114,42 +114,73 @@ min_cost = None
 max_cost = None
 
 # Filter options
-filter_store_option = st.checkbox("Filter by store")
-if filter_store_option:
+# filter_store_option = st.checkbox("Filter by store")
+# if filter_store_option:
   # show all unique store names as well as 'Select store' in dropdown
-  user_store= st.selectbox("Select a store", ["Select store"] + list(set(receipt[1] for receipt in st.session_state.all_receipts)))
+user_store= st.multiselect("Select a store",  list(set(receipt[1] for receipt in st.session_state.all_receipts)))
+print(user_store)
+# filter_cost_option = st.checkbox("Filter by cost")
+# if filter_cost_option:
+cost_filters = st.selectbox("Select cost range", ["All costs", f"Under {curr}50", f"{curr}50-{curr}250", f"{curr}250-{curr}750", f"Over {curr}750", "Custom"])
+if cost_filters == f"Under {curr}50":
+    min_cost = 0.1
+    max_cost = 49
+elif cost_filters == f"{curr}50-{curr}250":
+    min_cost = 50
+    max_cost = 249
+elif cost_filters == f"{curr}250-{curr}750":
+    min_cost = 250
+    max_cost = 749
+elif cost_filters == f"Over {curr}750":
+    min_cost = 750
+    max_cost = 10000 
+elif cost_filters == "Custom":
+    min_cost = st.number_input("Enter minimum cost", min_value=1, max_value=2000000, step=1, value=80)
+    max_cost = st.number_input("Enter maximum cost", min_value=1, max_value=2000000, step=1, value=300)
 
-filter_cost_option = st.checkbox("Filter by cost")
-if filter_cost_option:
-  min_cost = st.number_input("Enter minimum cost", min_value=1, max_value=2000000, step=1, value=80)
-  max_cost = st.number_input("Enter maximum cost", min_value=1, max_value=2000000, step=1, value=300)
-
-filter_date_option = st.checkbox("Filter by date")
-if filter_date_option:
-  start_date = st.date_input("Select starting date")
-  end_date = st.date_input("Select ending date")
-
+# filter_date_option = st.checkbox("Filter by date")
+# if filter_date_option:
+date_filters = st.selectbox("Select date range", ["All dates","Current month", "Last 6 months", "Current year", "Custom range"])
+today = date.today()
+if date_filters == "Current month":
+    start_date = date(today.year, today.month, 1) 
+    end_date = today
+elif date_filters == "Last 6 months":
+    month = today.month - 5
+    year = today.year
+    if month <= 0:
+        month +=12
+        year-=1
+    start_date = date(year, month, 1) 
+    end_date = today
+elif date_filters == "Current year":
+    start_date = date(today.year, 1, 1)
+    end_date = today
+elif date_filters == "Custom range":
+    start_date = st.date_input("Select starting date")
+    end_date = st.date_input("Select ending date")
 
 # Button to implement filtering
-if filter_cost_option or filter_date_option or filter_store_option:
+# if filter_cost_option or filter_date_option or filter_store_option:
+if user_store != [] or date_filters != "All dates" or cost_filters != "All costs":
   btn_filter = st.button(f"Filter receipts")
   if btn_filter:
     st.session_state.default_display = False 
     rows_to_search = st.session_state.all_receipts # search all receipts in database
     # Filter receipts based on user input
-    if filter_store_option:
-        rows_to_search = [receipt for receipt in rows_to_search if receipt[1] == user_store]
-    if filter_date_option:
+    if user_store != []:  
+        rows_to_search = [receipt for receipt in rows_to_search if receipt[1] in user_store]
+    if date_filters != "All dates":
       rows_to_search = filter_receipts_by_date(rows_to_search, start_date, end_date)
-    if filter_cost_option:
+    if cost_filters != "All costs":
       rows_to_search = filter_receipts_by_cost(rows_to_search, min_cost, max_cost)
 
     st.session_state.display_receipts = rows_to_search # receipts to display to user
 
     if len(st.session_state.display_receipts) == 0: # if no reciepts fit filtering conditions, check for user input errors
-        if (user_store == "Select store"):
-            st.error("Please select a store")
-        elif (start_date and start_date>end_date): # check if invalid date range
+        # if (user_store == "Select store"):
+        #     st.error("Please select a store")
+        if (start_date and start_date>end_date): # check if invalid date range
             st.error("Start date is after end date - please enter valid date range")
         elif(end_date and end_date>date.today()):
             st.error("Invalid end date - it cannot be set to a future date")
@@ -160,23 +191,25 @@ if filter_cost_option or filter_date_option or filter_store_option:
             st.write("Sorry no matching receipts were found - please enter different filtering conditions")
 
 # rendering reciepts in table
-if not filter_store_option and not filter_date_option and not filter_cost_option:
+if user_store == [] and date_filters == "All dates" and cost_filters == "All costs":
   st.session_state.default_display = True
 
 rows = st.session_state.display_receipts
 
 # if no filtering, show receipts from most recent month
 if st.session_state.default_display:
-    rows = filter_for_month(date.today().year, date.today().month) # find receipts from current month
+    # rows = filter_for_month(date.today().year, date.today().month) # find receipts from current month
+    rows = extract_data()
     if (len(rows)>0): # if there are receipts from current month display relevant message 
-        st.write(f"Receipts from {date.today().strftime("%B")}")
-    else: # otherwise find receipts from most recent month and year
-        if st.session_state.all_receipts:
-            most_recent_date = st.session_state.all_receipts[0][0]
-            rows = filter_for_month(most_recent_date.year, most_recent_date.month)
-            st.write(f"Most recent receipts from {most_recent_date.strftime("%B")} {most_recent_date.year}")
-        else: # if there are no receipts then show relevant message
-            st.write("No invoices or receipts have been uploaded")
+        # st.write(f"Receipts from {date.today().strftime("%B")}")
+        st.write("All receipts")
+    # else: # otherwise find receipts from most recent month and year
+    #     if st.session_state.all_receipts:
+    #         most_recent_date = st.session_state.all_receipts[0][0]
+    #         rows = filter_for_month(most_recent_date.year, most_recent_date.month)
+    #         st.write(f"Most recent receipts from {most_recent_date.strftime("%B")} {most_recent_date.year}")
+    else: # if there are no receipts then show relevant message
+        st.write("No invoices or receipts have been uploaded")
     st.session_state.display_receipts = rows 
 
 # Build dataframe
