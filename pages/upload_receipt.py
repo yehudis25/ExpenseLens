@@ -2,18 +2,18 @@
 import streamlit as st
 import pandas as pd
 import os
-from PIL import UnidentifiedImageError
-
+from PIL import Image, UnidentifiedImageError
+import io
 from utils.receipt_processor import process_receipt, receipt_check, extract_raw_text
 from database.database import (
     save_receipt,
     save_image,
+    save_feedback
 )
 
-# make sure user is logged in
+# create different user (database) for each user - to be continued...
 if "user_id" not in st.session_state:
-    st.warning("Please login first")
-    st.switch_page("app.py")
+    st.session_state["user_id"] = "user1"
 
 
 
@@ -72,6 +72,7 @@ uploaded_file = st.file_uploader(
 )
 
 # sample receipts to test with
+import os
 
 sample_files = []
 
@@ -150,7 +151,6 @@ if image_input:
             )
 
             st.markdown("### Items")
-            items = []
             try:
             # Convert extracted items into a DataFrame
                 items_list = st.session_state["receipt_data"].get("items", [])
@@ -187,13 +187,8 @@ if image_input:
 
             saved = st.form_submit_button("💾 Save Receipt")
 
-
             # save data from receipt
             if saved:
-                if not store or not date:
-                    st.error("Receipt information is missing. Please fill in store and date before saving.")
-                    st.stop()
-
                 image_path = save_image(image_input, st.session_state["user_id"])
                 receipt = {
 
@@ -232,10 +227,52 @@ if image_input:
                     st.error(
                         "Database save failed"
                     )
-                    st.write(e)
 
 
 # add page here
 if st.button("View Receipts"):
     st.switch_page("pages/summary.py")
 
+
+# rate activities here
+st.divider()
+st.subheader("Feedback")
+
+with st.form("feedback_form"):
+    rating = st.slider(
+        "Rate your experience",
+        min_value=1,
+        max_value=5,
+        value=3
+    )
+    comment = st.text_area(
+        "Leave a comment here:"
+    )
+
+    submitted = st.form_submit_button("Submit Feedback")
+
+if submitted:
+    # save feedback to dtbs
+    try:
+        save_feedback(
+            rating,
+            comment
+        )
+
+
+        st.success(
+            "Thank you for your feedback!"
+        )
+
+        st.write(
+            "Your rating:",
+            "⭐" * rating
+        )
+
+
+    except Exception as e:
+        st.error(
+            "Could not save feedback"
+        )
+
+        st.write(e)
