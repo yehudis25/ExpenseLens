@@ -121,8 +121,6 @@ def save_receipt(data, image_path=None, user_id="guest"):
         return False
 
 
-
-
 def get_receipts(user_id=None):
     """
     get receipts and decrypt sensitive fields
@@ -149,8 +147,14 @@ def get_receipts(user_id=None):
     conn.close()
     # decrypt the data
     decrypted_rows = []
-
+    
     for row in rows:
+        raw_category = row[8]
+
+        try:
+            category = decrypt(raw_category)
+        except Exception:
+            category = raw_category
         decrypted_rows.append(
             (
                 row[0],                 # id
@@ -161,7 +165,7 @@ def get_receipts(user_id=None):
                 json.loads(decrypt(row[5])),        # items
                 decrypt(row[6]),        # notes
                 row[7],                 # image_path
-                decrypt(row[8]),        # category
+                category,        # category
                 row[9]                  # created_at
             )
         )
