@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # module for startup page - where user uploades and edits receipts
 # auto start ollama server
 import subprocess
@@ -20,8 +19,6 @@ def ensure_ollama_running():
 
 ensure_ollama_running()
 
-=======
->>>>>>> 20b5d5682c44055b720a52b0e41c4363810e272d
 import streamlit as st
 from database.database import create_tables, DB_PATH
 import os
