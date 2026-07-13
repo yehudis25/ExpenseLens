@@ -187,7 +187,7 @@ if image_input:
             CATEGORIES = [
                 "",
                 "Advertising",
-                "Travel Expenses",
+                "howTravel Expenses",
                 "Commissions",
                 "Contract Labor",
                 "Insurance",

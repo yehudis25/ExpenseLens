@@ -101,30 +101,44 @@ def structure_text_with_llm(raw_text: str) -> dict:
     Sends OCR text to Llama and safely extracts valid JSON.
     Repairs common LLL formatting issues before json.loads().
     """
-    prompt = f"""
-    You are a data extraction assistant for the ExpenseLens app.
-    Analyze the following raw OCR text extracted from a store receipt and return a valid JSON object.
-    
-    Return ONLY valid JSON.
+    prompt = """
+    You are an extraction assistant for the ExpenseLens app.
+    Your job is to extract structured receipt data from messy OCR text.
 
-    Format:
-    {{
-     "store": "",
-     "date": "",
-     "total": 0,
-     "items": [
-       {{
+    ### REQUIRED FIELDS
+    - store: string (never blank)
+    - date: string (never blank)
+    - total: number (never blank)
+    - items: list of objects with:
+        - name: string
+        - price: number
+
+    ### EXTRACTION RULES
+    1. If the OCR text contains item lines (e.g., "Milk 3.99"), extract them.
+    2. If item names are missing, infer them from context (e.g., "Item 1").
+    3. If prices appear without names, still create an item with a placeholder name.
+    4. If store or date are missing, infer reasonable placeholders:
+        - store: "Unknown Store"
+        - date: "Unknown Date"
+    5. If total is missing, sum item prices.
+
+    ### OUTPUT FORMAT
+    Return ONLY valid JSON in this exact structure:
+
+    {
+    "store": "",
+    "date": "",
+    "total": 0,
+    "items": [
+        {
         "name": "",
         "price": 0
-       }}
-     ]
-    }}
+        }
+    ]
+    }
 
-    Do not include explanations.
-
-    Raw OCR Text:
-    {raw_text}
-    """
+    OCR Text:
+    """ + raw_text
 
     try:
         response = ollama.generate(
