@@ -64,12 +64,24 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-# user can upload a file
-uploaded_file = st.file_uploader(
-    "Upload a receipt image",
-    type=["png", "jpg", "jpeg"],
-    help="Upload a clear image of a receipt for automatic information extraction."
+st.subheader("Add a Receipt")
+
+input_method = st.radio(
+    "Choose how to add a receipt:",
+    ["Upload Image", "Take Picture"]
 )
+
+uploaded_file = None
+
+if input_method == "Upload Image":
+    uploaded_file = st.file_uploader(
+        "Upload a receipt image",
+        type=["png", "jpg", "jpeg"],
+        help="Upload a clear image of a receipt."
+    )
+
+else:
+    uploaded_file = st.camera_input("Take a picture of your receipt")
 
 # sample receipts to test with
 import os
@@ -254,45 +266,3 @@ if st.button("View Receipts"):
     st.switch_page("pages/summary.py")
 
 
-# rate activities here
-st.divider()
-st.subheader("Feedback")
-
-with st.form("feedback_form"):
-    rating = st.slider(
-        "Rate your experience",
-        min_value=1,
-        max_value=5,
-        value=3
-    )
-    comment = st.text_area(
-        "Leave a comment here:"
-    )
-
-    submitted = st.form_submit_button("Submit Feedback")
-
-if submitted:
-    # save feedback to dtbs
-    try:
-        save_feedback(
-            rating,
-            comment
-        )
-
-
-        st.success(
-            "Thank you for your feedback!"
-        )
-
-        st.write(
-            "Your rating:",
-            "⭐" * rating
-        )
-
-
-    except Exception as e:
-        st.error(
-            "Could not save feedback"
-        )
-
-        st.write(e)
