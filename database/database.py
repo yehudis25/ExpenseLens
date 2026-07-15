@@ -15,47 +15,88 @@ UPLOAD_FOLDER = os.path.join(PROJECT_DIR, "uploads", "receipts")
 def get_connection():
     return sqlite3.connect(DB_PATH)
 
+# def create_tables():
+#     """
+#     make tables in dtbs
+#     """
+#     conn = get_connection()
+#     cursor = conn.cursor()
+
+#     cursor.execute("""
+#     CREATE TABLE IF NOT EXISTS receipts(
+#         id INTEGER PRIMARY KEY AUTOINCREMENT,
+#         user_id TEXT,
+#         store TEXT,
+#         date TEXT,
+#         total REAL,
+#         items TEXT,
+#         notes TEXT,
+#         image_path TEXT,
+#         category TEXT,   -- NEW COLUMN
+#         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+#     )
+#     """)
+
+
+#     cursor.execute("""
+#     CREATE TABLE IF NOT EXISTS feedback(
+#         id INTEGER PRIMARY KEY AUTOINCREMENT,
+#         rating INTEGER,
+#         comment TEXT,
+#         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+#     )
+#     """)
+#     cursor.execute("""
+#     CREATE TABLE IF NOT EXISTS users (
+#         id INTEGER PRIMARY KEY AUTOINCREMENT,
+#         username TEXT UNIQUE,
+#         password TEXT
+#     )
+#     """)
+    
+#     conn.commit()
+#     conn.close()
 def create_tables():
-    """
-    make tables in dtbs
-    """
     conn = get_connection()
-    cursor = conn.cursor()
 
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS receipts(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id TEXT,
-        store TEXT,
-        date TEXT,
-        total REAL,
-        items TEXT,
-        notes TEXT,
-        image_path TEXT,
-        category TEXT,   -- NEW COLUMN
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-    """)
+    try:
+        cursor = conn.cursor()
 
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS receipts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT,
+                store TEXT,
+                date TEXT,
+                total REAL,
+                items TEXT,
+                notes TEXT,
+                image_path TEXT,
+                category TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
 
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS feedback(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        rating INTEGER,
-        comment TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-    """)
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT UNIQUE,
-        password TEXT
-    )
-    """)
+        columns = {
+            row[1]
+            for row in cursor.execute(
+                "PRAGMA table_info(receipts)"
+            ).fetchall()
+        }
 
-    conn.commit()
-    conn.close()
+        if "category" not in columns:
+            cursor.execute(
+                "ALTER TABLE receipts ADD COLUMN category TEXT"
+            )
+
+        # Keep your feedback/users CREATE statements here.
+
+        conn.commit()
+
+    finally:
+        conn.close()
 
 
 def save_image(image_input, user_id):
