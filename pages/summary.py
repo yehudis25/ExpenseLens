@@ -46,15 +46,17 @@ st.title("Receipt Summary & Reports")
 st.write("Analyze your spending habits. Use the filters below to update your report and charts.")
 st.caption("💡 To apply filter changes, click **Filter receipts** button")
 def extract_data():
-    receipts = get_receipts(st.session_state.get("user_id", "user1"))
+    receipts = get_receipts(st.session_state["user_id"])
+    st.session_state.all_receipts_full = receipts
     rows = []
-
     for r in receipts:
         # r = (id, user_id, store, date, total, items, notes, image_path, created_at)
-        try:
-            rows.append((pd.to_datetime(r[3]).date(), r[2], float(r[4]), r[0]))
-        except:
+        parsed_date = pd.to_datetime(r[3], errors="coerce")
+
+        if pd.isna(parsed_date):
             continue
+
+        rows.append((parsed_date.date(), r[2], float(r[4] or 0), r[0]))
     return rows
 
 def filter_receipts_by_date(receipts, start, end):
@@ -71,16 +73,23 @@ def currency(): # just for reference will used based off of pic - assume will on
     return "$"
 
 def search_receipts(selected):  # will need to implement properly once receipts have ids
-    name = selected.split("-")[0].strip()
-    cost = selected.split("-")[1].split("(")[0].strip()[1:]
-    date = selected.split("(")[1][0:-1]
-    return { # just for now - will add id in data to use to search for row and send to screen
-      "store": name,
-      "date": date,
-      "total": cost,
-      "items": "",
-      "notes": ""
-    }
+    receipt_id = int(selected.split("ID:")[1])
+
+    for receipt in st.session_state.all_receipts_full:
+        if receipt[0] == receipt_id:
+            return {
+                "id": receipt[0],
+                "user_id": receipt[1],
+                "store": receipt[2],
+                "date": receipt[3],
+                "total": receipt[4],
+                "items": receipt[5],
+                "notes": receipt[6],
+                "image_path": receipt[7],
+                "created_at": receipt[8]
+            }
+
+    return None
     #     for r in st.session_state.all_receipts:
     #     if r[2]==selected[0] and r[4]==selected[1] and r[3]==selected[2]:
     #         print(selected[4])
