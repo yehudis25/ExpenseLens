@@ -74,7 +74,7 @@ df = pd.DataFrame({
     "Total": list(category_totals.values())
 })
 st.write("Categories from DB:", [r[8] for r in monthly_receipts])
-
+st
 # Build pie chart colored by category
 fig = px.pie(
     df,
@@ -88,6 +88,5 @@ for r in monthly_receipts:
     st.write(f"Store: {r[2]}, Category: {r[8]}, Date: {r[3]}")
     st.write("Category index 8:", r[8], " | created_at index 9:", r[9])
 st.write([r[8] for r in get_receipts()])
-
 
 st.plotly_chart(fig, use_container_width=True)

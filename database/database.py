@@ -15,48 +15,10 @@ UPLOAD_FOLDER = os.path.join(PROJECT_DIR, "uploads", "receipts")
 def get_connection():
     return sqlite3.connect(DB_PATH)
 
-# def create_tables():
-#     """
-#     make tables in dtbs
-#     """
-#     conn = get_connection()
-#     cursor = conn.cursor()
-
-#     cursor.execute("""
-#     CREATE TABLE IF NOT EXISTS receipts(
-#         id INTEGER PRIMARY KEY AUTOINCREMENT,
-#         user_id TEXT,
-#         store TEXT,
-#         date TEXT,
-#         total REAL,
-#         items TEXT,
-#         notes TEXT,
-#         image_path TEXT,
-#         category TEXT,   -- NEW COLUMN
-#         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-#     )
-#     """)
-
-
-#     cursor.execute("""
-#     CREATE TABLE IF NOT EXISTS feedback(
-#         id INTEGER PRIMARY KEY AUTOINCREMENT,
-#         rating INTEGER,
-#         comment TEXT,
-#         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-#     )
-#     """)
-#     cursor.execute("""
-#     CREATE TABLE IF NOT EXISTS users (
-#         id INTEGER PRIMARY KEY AUTOINCREMENT,
-#         username TEXT UNIQUE,
-#         password TEXT
-#     )
-#     """)
-    
-#     conn.commit()
-#     conn.close()
 def create_tables():
+    """
+    Create all database tables and update older databases if needed.
+    """
     conn = get_connection()
 
     try:
@@ -78,6 +40,25 @@ def create_tables():
             )
             """
         )
+        
+        # Feedback table
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS feedback (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            rating INTEGER,
+            comment TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+        """)
+
+        # Users table
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE,
+            password TEXT
+        )
+        """)
 
         columns = {
             row[1]
@@ -91,7 +72,10 @@ def create_tables():
                 "ALTER TABLE receipts ADD COLUMN category TEXT"
             )
 
-        # Keep your feedback/users CREATE statements here.
+            cursor.execute(
+                "UPDATE receipts SET category=? WHERE category IS NULL",
+                (encrypt("Other"),)
+            )
 
         conn.commit()
 
@@ -194,12 +178,16 @@ def get_receipts(user_id=None):
     decrypted_rows = []
     
     for row in rows:
-        raw_category = row[8]
+        raw_category = row[9]
 
-        try:
-            category = decrypt(raw_category)
-        except Exception:
-            category = raw_category
+        if raw_category:
+            try:
+                category = decrypt(raw_category)
+            except Exception:
+                category = "Other"
+        else:
+            category = "Other"
+
         decrypted_rows.append(
             (
                 row[0],                 # id
