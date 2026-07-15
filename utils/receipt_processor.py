@@ -64,7 +64,7 @@ def receipt_check(text: str) -> bool:
 
     # If any receipt or invoice keyword appears → treat as valid
     return any(k in text_lower for k in receipt_keywords + invoice_keywords)
-
+# prevent duplicate reciept from being uploaded
 def prevent_duplicate_receipt_by_text(raw_text):
     if "receipt_texts" not in st.session_state:
         st.session_state.receipt_texts = set()
@@ -72,10 +72,12 @@ def prevent_duplicate_receipt_by_text(raw_text):
     normalized = re.sub(r"\s+", " ", raw_text.lower()).strip()
 
     if normalized in st.session_state.receipt_texts:
-        st.error("This receipt has already been uploaded.")
+        st.warning("⚠️ This receipt has already been uploaded.")
         st.stop()
     else:
         st.session_state.receipt_texts.add(normalized)
+        st.success("✅ New receipt uploaded successfully.")
+
 
 def extract_raw_text(image_input) -> str:
     try:
@@ -313,4 +315,5 @@ def process_receipt(raw_text: str):
     # raw_text = extract_raw_text(image)
     # st.write("OCR Text:")
     # st.code(raw_text)
+    prevent_duplicate_receipt_by_text(raw_text)
     return structure_text_with_llm(raw_text)

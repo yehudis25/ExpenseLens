@@ -2,18 +2,17 @@
 import streamlit as st
 import pandas as pd
 import os
-from PIL import Image, UnidentifiedImageError
-import io
+from PIL import UnidentifiedImageError
 from utils.receipt_processor import process_receipt, receipt_check, extract_raw_text
 from database.database import (
     save_receipt,
-    save_image,
-    save_feedback
+    save_image
 )
 
-# create different user (database) for each user - to be continued...
+# make sure user is logged in
 if "user_id" not in st.session_state:
-    st.session_state["user_id"] = "user1"
+    st.warning("Please login first")
+    st.switch_page("app.py")
 
 
 
@@ -84,7 +83,6 @@ else:
     uploaded_file = st.camera_input("Take a picture of your receipt")
 
 # sample receipts to test with
-import os
 
 sample_files = []
 
@@ -165,6 +163,7 @@ if image_input:
             )
 
             st.markdown("### Items")
+            items = []
             try:
             # Convert extracted items into a DataFrame
                 items_list = st.session_state["receipt_data"].get("items", [])
@@ -222,6 +221,9 @@ if image_input:
 
             # save data from receipt
             if saved:
+                if not store or not date:
+                    st.error("Receipt information is missing. Please fill in store and date before saving.")
+                    st.stop()
                 image_path = save_image(image_input, st.session_state["user_id"])
                 receipt = {
 
@@ -261,7 +263,7 @@ if image_input:
                     st.error(
                         "Database save failed"
                     )
-
+                    st.write(e)
 
 # add page here
 if st.button("View Receipts"):

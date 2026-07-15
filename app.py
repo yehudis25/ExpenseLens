@@ -1,8 +1,9 @@
 import streamlit as st
-from database.database import create_tables, get_connection
+from database.database import create_tables, DB_PATH
 import os
 import hashlib
 import sqlite3
+
 # configure the page, must run first
 st.set_page_config(
     page_title="ExpenseLens",
@@ -13,7 +14,6 @@ st.set_page_config(
 
 
 create_tables()
-DB_PATH = "expense_lens.db"
 
 # funtion which turns the password into hashes
 def hash_password(password):

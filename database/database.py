@@ -66,7 +66,7 @@ def create_tables():
             """
             CREATE TABLE IF NOT EXISTS receipts (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id TEXT,
+                user_id INTEGER,
                 store TEXT,
                 date TEXT,
                 total REAL,
@@ -103,7 +103,6 @@ def save_image(image_input, user_id):
     """
     Save an encrypted receipt image and return its file path.
     """
-    import os
 
     if isinstance(image_input, str):
         # already a file path
@@ -112,7 +111,10 @@ def save_image(image_input, user_id):
     # Streamlit UploadedFile
     filename = os.path.splitext(image_input.name)[0] + ".enc"
 
-    save_path = os.path.join("uploads", user_id)
+    save_path = os.path.join(
+        UPLOAD_FOLDER,
+        str(user_id)
+    )
     os.makedirs(save_path, exist_ok=True)
 
     full_path = os.path.join(save_path, filename)
@@ -129,10 +131,12 @@ def save_image(image_input, user_id):
 
     return full_path
 
-def save_receipt(data, image_path=None, user_id="guest"):
+def save_receipt(data, image_path=None, user_id=None):
     """
     save a receipt with encrypted sensitive fields
     """
+    if user_id is None:
+        raise ValueError("User must be logged in")
     try:
         conn = get_connection()
         cursor = conn.cursor()

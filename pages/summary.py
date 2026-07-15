@@ -6,6 +6,11 @@ from datetime import datetime
 import streamlit.components.v1 as components
 import plotly.express as px
 from database.database import get_receipts
+
+if "user_id" not in st.session_state:
+    st.warning("Please login first")
+    st.switch_page("app.py")
+
 st.markdown("""
 <style>
 @media print {
@@ -48,6 +53,7 @@ st.caption("💡 To apply filter changes, click **Filter receipts** button")
 def extract_data():
     receipts = get_receipts(st.session_state["user_id"])
     st.session_state.all_receipts_full = receipts
+    st.session_state.all_receipts_full = receipts
     rows = []
     for r in receipts:
         # r = (id, user_id, store, date, total, items, notes, image_path, created_at)
@@ -72,10 +78,10 @@ def filter_receipts_by_cost(receipts, min_val, max_val):
 def currency(): # just for reference will used based off of pic - assume will only use one currency..
     return "$"
 
-def search_receipts(selected):  # will need to implement properly once receipts have ids
+def search_receipts(selected):
     receipt_id = int(selected.split("ID:")[1])
-
     for receipt in st.session_state.all_receipts_full:
+
         if receipt[0] == receipt_id:
             return {
                 "id": receipt[0],
@@ -88,7 +94,6 @@ def search_receipts(selected):  # will need to implement properly once receipts 
                 "image_path": receipt[7],
                 "created_at": receipt[8]
             }
-
     return None
     #     for r in st.session_state.all_receipts:
     #     if r[2]==selected[0] and r[4]==selected[1] and r[3]==selected[2]:
@@ -110,8 +115,12 @@ curr = currency()
 if "default_display" not in st.session_state:
     st.session_state.default_display = True
 
-if "all_receipts" not in st.session_state:
-    st.session_state.all_receipts = extract_data()
+st.session_state.all_receipts = extract_data()
+
+if "all_receipts_full" not in st.session_state:
+    st.session_state.all_receipts_full = get_receipts(
+        st.session_state["user_id"]
+    )
 
 if "display_receipts" not in st.session_state:
     st.session_state.display_receipts = st.session_state.all_receipts
@@ -232,15 +241,20 @@ df = st.session_state.df
 st.data_editor(st.session_state.df, disabled=True, column_config ={"Total Cost": st.column_config.NumberColumn("Total Cost", format = f"{curr} %.2f")})
 
 # select specific reciept to show details
-selected_receipt = st.selectbox("Select a receipt", ["Select receipt"] + list(set(f"{receipt[1]} - {curr}{receipt[2]:.2f} ({receipt[0]})"  for receipt in rows)))
+selected_receipt = st.selectbox(
+    "Select a receipt",
+    ["Select receipt"] + [
+        f"{receipt[1]} - ${receipt[2]:.2f} ({receipt[0]})"
+        for receipt in rows
+    ]
+)
 
 if selected_receipt and selected_receipt != "Select receipt":
     st.session_state.receipt_data = search_receipts(selected_receipt)
     st.switch_page("pages/details.py")
 
 # Load all receipts
-receipts = extract_data()  # returns decrypted rows in correct order
-
+receipts = st.session_state.all_receipts  # lists of reciepts so budget can access it
 # Determine current month
 now = datetime.now()
 current_year = now.year
@@ -256,64 +270,6 @@ for r in receipts:
     except Exception:
         pass
 
-# Budget input
-budget = st.number_input(
-    "Set your monthly budget",
-    min_value=0.0,
-    value=500.0,
-    step=10.0
-)
-
-st.session_state.budget = budget
-
-# Calculate monthly spending
-total_spent = sum(r[4] for r in monthly_receipts)  # r[4] = total
-remaining = st.session_state.budget - total_spent
-
-# Display metrics
-st.metric("Total Spent (This Month)", f"${total_spent:.2f}")
-st.metric("Remaining Budget", f"${remaining:.2f}")
-
-if remaining < 0:
-    st.error("You are over budget.")
-else:
-    st.success("You are within your budget.")
-
-# pie chart to visualize categories expenses
-receipts = extract_data()
-
-# Determine current month
-now = datetime.now()
-current_year = now.year
-current_month = now.month
-
-# Filter receipts to current month
-monthly_receipts = []
-for r in receipts:
-    try:
-        receipt_date = datetime.strptime(r[3], "%Y-%m-%d")  # r[3] = date
-        if receipt_date.year == current_year and receipt_date.month == current_month:
-            monthly_receipts.append(r)
-    except Exception:
-        pass
-
-# Aggregate totals by category
-category_totals = {}
-
-for r in monthly_receipts:
-    category = r[8]      # category
-    total = r[4]         # total
-
-    category_totals[category] = category_totals.get(category, 0) + total
-
-# Build pie chart
-fig = px.pie(
-    names=list(category_totals.keys()),
-    values=list(category_totals.values()),
-    title="Spending by Category (This Month)"
-)
-
-st.plotly_chart(fig, use_container_width=True)
 
 # chart to visualize data
 if not df.empty:
