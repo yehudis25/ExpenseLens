@@ -90,3 +90,9 @@ for r in monthly_receipts:
 st.write([r[8] for r in get_receipts()])
 
 st.plotly_chart(fig, use_container_width=True)
+
+if st.button("← Back to Upload Screen"):
+    st.switch_page("pages/upload_receipt.py")
+
+if st.button("View Receipts"):
+    st.switch_page("pages/summary.py")

@@ -79,7 +79,10 @@ def currency(): # just for reference will used based off of pic - assume will on
     return "$"
 
 def search_receipts(selected):
-    receipt_id = int(selected.split("ID:")[1])
+    if "ID:" not in selected:
+        return None
+
+    receipt_id = int(selected.split("ID:")[1].strip())
     for receipt in st.session_state.all_receipts_full:
 
         if receipt[0] == receipt_id:
@@ -92,7 +95,8 @@ def search_receipts(selected):
                 "items": receipt[5],
                 "notes": receipt[6],
                 "image_path": receipt[7],
-                "created_at": receipt[8]
+                "category": receipt[8],
+                "created_at": receipt[9]
             }
     return None
     #     for r in st.session_state.all_receipts:
@@ -244,8 +248,8 @@ st.data_editor(st.session_state.df, disabled=True, column_config ={"Total Cost":
 selected_receipt = st.selectbox(
     "Select a receipt",
     ["Select receipt"] + [
-        f"{receipt[1]} - ${receipt[2]:.2f} ({receipt[0]})"
-        for receipt in rows
+        f"{receipt[1]} - ${receipt[2]:.2f} ID:{receipt[3]}"
+        for receipt in st.session_state.all_receipts
     ]
 )
 
@@ -331,4 +335,4 @@ if not df.empty:
 
 # Navigation Back Home
 if st.button("← Back to Upload Screen"):
-    st.switch_page("app.py")
+    st.switch_page("pages/upload_receipt.py")

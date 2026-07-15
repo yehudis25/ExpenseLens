@@ -268,5 +268,6 @@ if image_input:
 # add page here
 if st.button("View Receipts"):
     st.switch_page("pages/summary.py")
-
+if st.button("View Budget Overview"):
+    st.switch_page("pages/budget.py")
 

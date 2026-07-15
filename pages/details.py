@@ -67,4 +67,6 @@ with col2:
 
 # Navigation Back Home
 if st.button("← Back to Upload Screen"):
-    st.switch_page("app.py")
+    st.switch_page("pages/upload_receipt.py")
+if st.button("View Receipts"):
+    st.switch_page("pages/summary.py")

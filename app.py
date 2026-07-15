@@ -149,6 +149,11 @@ else:
         st.switch_page(
             "pages/upload_receipt.py"
         )
+    if st.button("View Receipts"):
+        st.switch_page("pages/summary.py")
+    if st.button("View Budget Overview"):
+        st.switch_page("pages/budget.py")
+
 
     if st.button("Logout"):
         st.session_state.clear()
