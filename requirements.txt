@@ -1,7 +1,7 @@
 streamlit
 pandas
 pillow
-easyocr
+pytesseract
 ollama
 cryptography
 pdf2image
