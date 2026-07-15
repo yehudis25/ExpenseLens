@@ -125,8 +125,9 @@ if image_input:
 
             # First extract text
             with st.spinner("Analyzing document..."):
+                print("STEP 1")
                 extracted_text = extract_raw_text(image_input)
-
+                print("STEP 2")
             # Run LLM validator OUTSIDE spinner
             if not receipt_check(extracted_text):
                 st.error("This does not appear to be a receipt or invoice.")
@@ -134,7 +135,8 @@ if image_input:
 
             # Now run LLM extraction
             with st.spinner("Extracting structured data..."):
-                st.session_state["receipt_data"] = process_receipt(image_input)
+                # st.session_state["receipt_data"] = process_receipt(image_input)
+                st.session_state["receipt_data"] = process_receipt(extracted_text)
 
             st.success("Valid receipt detected! Extracting structured data...")
 
@@ -185,7 +187,7 @@ if image_input:
                     
                     df["subtotal"] = df["price"] * df["quantity"]
 
-                edited_df = st.data_editor(df, use_container_width=True)
+                edited_df = st.data_editor(df,width="stretch")
                 items = edited_df.to_dict(orient="records")
 
             except Exception as e:
