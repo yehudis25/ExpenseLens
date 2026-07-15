@@ -73,17 +73,15 @@ def create_user(username, password):
 # logo
 LOGO_PATH = "/workspaces/ExpenseLens/assets/Logo.png"
 
-col1, col2 = st.columns([3, 4])  # wider column for the logo
+col1, col_center, col3 = st.columns([1, 2, 1])
 
-with col1:
+with col_center:
     if os.path.exists(LOGO_PATH):
         st.image(LOGO_PATH, width=350)
     else:
-        st.markdown("# 🔍")
+        st.markdown("<h1 style='text-align: center;'>🔍</h1>", unsafe_allow_html=True)
+    # st.markdown("<p style='text-align: center; color: gray; font-size: 1.15em;'>Precision Expense Tracking & Receipt Analysis</p>", unsafe_allow_html=True)
 
-with col2:
-    st.title("ExpenseLens")
-    st.caption("Precision Expense Tracking & Receipt Analysis")
 st.divider()
 
 #login
