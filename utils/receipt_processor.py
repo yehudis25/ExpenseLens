@@ -9,6 +9,7 @@ import torch
 from transformers import pipeline
 from pydantic import BaseModel, Field, ValidationError
 from typing import List
+import hashlib
 
 USE_GPU = torch.cuda.is_available()
 DEVICE = 0 if USE_GPU else -1
@@ -60,6 +61,31 @@ def receipt_check(text: str) -> bool:
 
     # If any receipt or invoice keyword appears → treat as valid
     return any(k in text_lower for k in receipt_keywords + invoice_keywords)
+
+# make sure same reciept cant be uploaded twice
+def get_image_hash(uploaded_file):
+    file_bytes = uploaded_file.read()
+    uploaded_file.seek(0)  # reset pointer so OCR still works
+    return hashlib.sha256(file_bytes).hexdigest()
+
+def get_text_hash(text):
+    return hashlib.sha256(text.encode('utf-8')).hexdigest()
+
+def prevent_duplicate_receipt(uploaded_file, raw_text):
+    image_hash = get_image_hash(uploaded_file)
+    text_hash = get_text_hash(raw_text)
+
+    combined_hash = image_hash + text_hash
+
+    if "receipt_hashes" not in st.session_state:
+        st.session_state.receipt_hashes = set()
+
+    if combined_hash in st.session_state.receipt_hashes:
+        st.error("This receipt has already been uploaded.")
+        st.stop()
+    else:
+        st.session_state.receipt_hashes.add(combined_hash)
+
 
 def extract_raw_text(image_input) -> str:
     """
@@ -186,4 +212,7 @@ def process_receipt(image) -> dict:
         return {"store": "", "date": "", "total": 0.0, "items": ""}
 
     raw_text = extract_raw_text(image)
+    prevent_duplicate_receipt(image, raw_text)
     return structure_text_with_llm(raw_text)
+
+
