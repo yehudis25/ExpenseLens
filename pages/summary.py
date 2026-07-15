@@ -333,6 +333,10 @@ if not df.empty:
         </script>
         """, height=0)
 
+if st.button("View Budget"):
+    st.switch_page("pages/budget.py")
+
 # Navigation Back Home
 if st.button("← Back to Upload Screen"):
     st.switch_page("pages/upload_receipt.py")
+

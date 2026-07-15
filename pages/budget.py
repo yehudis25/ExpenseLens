@@ -91,8 +91,9 @@ fig = px.pie(
 
 st.plotly_chart(fig, use_container_width=True)
 
+if st.button("View Receipts"):
+    st.switch_page("pages/summary.py")
+
 if st.button("← Back to Upload Screen"):
     st.switch_page("pages/upload_receipt.py")
 
-if st.button("View Receipts"):
-    st.switch_page("pages/summary.py")

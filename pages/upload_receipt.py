@@ -65,10 +65,16 @@ st.markdown("""
 
 st.subheader("Add a Receipt")
 
+# Initialize the save tracking state if it doesn't exist
+if "receipt_saved" not in st.session_state:
+    st.session_state.receipt_saved = False
 input_method = st.radio(
     "Choose how to add a receipt:",
     ["Upload Image", "Take Picture"]
 )
+# reset saved status when new file is saved
+def reset_save_state():
+    st.session_state.receipt_saved = False
 
 uploaded_file = None
 
@@ -76,7 +82,8 @@ if input_method == "Upload Image":
     uploaded_file = st.file_uploader(
         "Upload a receipt image",
         type=["png", "jpg", "jpeg"],
-        help="Upload a clear image of a receipt."
+        help="Upload a clear image of a receipt.",
+        on_change=reset_save_state  # Resets state when a new file is uploaded
     )
 
 else:
@@ -93,7 +100,8 @@ for root, dirs, files in os.walk("data"):
 
 sample = st.selectbox(
     "Or test with sample files",
-    ["None"] + sample_files
+    ["None"] + sample_files,
+    on_change=reset_save_state
 )
 
 if sample != "None":
@@ -112,6 +120,7 @@ if image_input:
     if st.session_state.get("last_uploaded") != current_file:
         st.session_state.pop("receipt_data", None)
         st.session_state["last_uploaded"] = current_file
+        st.session_state["receipt_saved"] = False
     
     try:
         st.image(image_input, width=300)
@@ -200,7 +209,7 @@ if image_input:
             CATEGORIES = [
                 "",
                 "Advertising",
-                "howTravel Expenses",
+                "Travel Expenses",
                 "Commissions",
                 "Contract Labor",
                 "Insurance",
@@ -217,10 +226,17 @@ if image_input:
                 format_func=lambda x: "Select a category..." if x == "" else x
             )
 
-            saved = st.form_submit_button("💾 Save Receipt")
+            # saved = st.form_submit_button("💾 Save Receipt")
+            saved = st.form_submit_button(
+                "💾 Save Receipt",
+                disabled=st.session_state.receipt_saved
+            )
 
             # save data from receipt
             if saved:
+                if st.session_state.receipt_saved:
+                    st.warning("This receipt has already been saved.")
+                    st.stop()
                 if not store or not date:
                     st.error("Receipt information is missing. Please fill in store and date before saving.")
                     st.stop()
@@ -251,9 +267,12 @@ if image_input:
                 
                     # did it save properly?
                     if receipt_id:
-                        st.success(
-                            "Receipt saved permanently!"
-                        )
+                        st.session_state.receipt_saved = True
+                        st.success("Receipt saved permanently!")
+                    if receipt_id:
+                        st.session_state.receipt_saved = True
+                        st.session_state["show_saved_message"] = True
+                        st.rerun()
 
                     else:
                         st.error(
