@@ -221,27 +221,46 @@ def structure_text_with_llm(raw_text: str) -> dict:
     raw_text = raw_text[:8000]
 
     prompt = f"""
-Extract the invoice information from the OCR text.
+You are an extraction assistant for the ExpenseLens app.
+Your job is to extract structured receipt data from messy OCR text.
 
-Rules:
-- Never omit store.
-- store is the seller or issuing company.
-- Inspect the first lines of the OCR for the company name.
-- Ignore trailing notices such as "European Union Customers".
-- If a line contains a company name followed by
-  "European Union Customers", only the company name is the store.
-- Never use the customer under "Bill To" as the store.
-- date is the invoice or receipt date.
-- total is the final amount the customer must pay.
-- If "Balance Due" exists, use it instead of "Total", subtotal, or tax.
-- items must contain purchased products or services.
-- Ignore addresses, phone numbers, tax IDs, and explanatory text.
-- Return every field required by the JSON schema.
+### REQUIRED FIELDS
+- store: string (never blank)
+- date: string (never blank)
+- total: number (never blank)
+- items: list of objects with:
+    - name: string
+    - price: number
 
-OCR TEXT:
----BEGIN OCR---
+### EXTRACTION RULES
+1. If the OCR text contains item lines (e.g., "Milk 3.99"), extract them.
+2. If item names are missing, infer them from context (e.g., "Item 1").
+3. If prices appear without names, still create an item with a placeholder name.
+4. If store or date are missing, infer reasonable placeholders:
+    - store: "Unknown Store"
+    - date: "Unknown Date"
+5. If total is missing, sum item prices.
+
+### OUTPUT FORMAT
+Return ONLY valid JSON in this exact structure — do NOT include explanations, markdown, or code fences:
+
+{{
+"store": "Unknown Store",
+"date": "Unknown Date",
+"total": 0.0,
+"items": [
+    {{
+    "name": "",
+    "price": 0
+    }}
+]
+}}
+
+### OCR TEXT TO PARSE
 {raw_text}
----END OCR---
+
+### INSTRUCTIONS
+Now extract and return ONLY the JSON object.
 """
 
     try:
@@ -284,14 +303,6 @@ OCR TEXT:
             "items": [],
         }
 
-<<<<<<< HEAD
-def process_receipt(image) -> dict:
-    if image is None:
-        return {"store": "", "date": "", "total": 0.0, "items": ""}
-
-    raw_text = extract_raw_text(image)
-    prevent_duplicate_receipt_by_text(raw_text)
-=======
 def process_receipt(raw_text: str):
     """
     Core Pipeline Orchestration: Chains the conversion steps together sequentially.
@@ -302,5 +313,4 @@ def process_receipt(raw_text: str):
     # raw_text = extract_raw_text(image)
     # st.write("OCR Text:")
     # st.code(raw_text)
->>>>>>> 696606e (Refactored how model is implemented and replaced easyocr with pytesseract)
     return structure_text_with_llm(raw_text)
