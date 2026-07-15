@@ -62,30 +62,17 @@ def receipt_check(text: str) -> bool:
     # If any receipt or invoice keyword appears → treat as valid
     return any(k in text_lower for k in receipt_keywords + invoice_keywords)
 
-# make sure same reciept cant be uploaded twice
-def get_image_hash(uploaded_file):
-    file_bytes = uploaded_file.read()
-    uploaded_file.seek(0)  # reset pointer so OCR still works
-    return hashlib.sha256(file_bytes).hexdigest()
+def prevent_duplicate_receipt_by_text(raw_text):
+    if "receipt_texts" not in st.session_state:
+        st.session_state.receipt_texts = set()
 
-def get_text_hash(text):
-    return hashlib.sha256(text.encode('utf-8')).hexdigest()
+    normalized = re.sub(r"\s+", " ", raw_text.lower()).strip()
 
-def prevent_duplicate_receipt(uploaded_file, raw_text):
-    image_hash = get_image_hash(uploaded_file)
-    text_hash = get_text_hash(raw_text)
-
-    combined_hash = image_hash + text_hash
-
-    if "receipt_hashes" not in st.session_state:
-        st.session_state.receipt_hashes = set()
-
-    if combined_hash in st.session_state.receipt_hashes:
+    if normalized in st.session_state.receipt_texts:
         st.error("This receipt has already been uploaded.")
         st.stop()
     else:
-        st.session_state.receipt_hashes.add(combined_hash)
-
+        st.session_state.receipt_texts.add(normalized)
 
 def extract_raw_text(image_input) -> str:
     """
@@ -205,14 +192,9 @@ def structure_text_with_llm(raw_text: str) -> dict:
         }
 
 def process_receipt(image) -> dict:
-    """
-    Core Pipeline Orchestration: Chains the conversion steps together sequentially.
-    """
     if image is None:
         return {"store": "", "date": "", "total": 0.0, "items": ""}
 
     raw_text = extract_raw_text(image)
-    prevent_duplicate_receipt(image, raw_text)
+    prevent_duplicate_receipt_by_text(raw_text)
     return structure_text_with_llm(raw_text)
-
-
