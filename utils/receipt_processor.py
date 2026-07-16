@@ -142,19 +142,19 @@ def structure_text_with_llm(raw_text: str) -> dict:
 
     prompt = f"""
     Extract structured purchase data from the OCR text.
- 
+
     DOCUMENT FIELDS
- 
+
     store:
     - The merchant or company issuing the receipt.
     - Usually appears in the first few lines.
     - Do not use the customer, cashier, server, address, or tax heading.
- 
+
     date:
     - The transaction, receipt, or invoice date.
     - Return YYYY-MM-DD when the day and month can be determined.
     - Do not use an order number, invoice number, or tax number.
- 
+
     total:
     - The final amount paid or payable.
     - Prefer labels in this order:
@@ -163,18 +163,18 @@ def structure_text_with_llm(raw_text: str) -> dict:
     3. Total
     - Do not use subtotal, excluding-tax total, service charge, tax,
     rounding adjustment, unit price, or an individual item total.
- 
+
     ITEM EXTRACTION
- 
+
     Locate the receipt's item table. It usually begins with headings
     similar to:
- 
+
     Description | Quantity | Unit price | Line total | Tax
- 
+
     Extract every purchased item between the table heading and the
     first summary line such as subtotal, total, tax, service charge,
     rounding, balance due, cash, or change.
- 
+
     Rules:
     - Process the item table from its first row through its last row.
     - Do not stop after extracting only the first few items.
@@ -191,23 +191,23 @@ def structure_text_with_llm(raw_text: str) -> dict:
     quantity × unit price approximately equals line total.
     - Never create an item without a meaningful alphabetic name.
     - Never create an item from a number alone.
- 
+
     RECONCILIATION
- 
+
     - When a subtotal or "Total excluding tax" exists, the sum of all
     extracted item line totals should approximately equal it.
     - If the item sum is smaller than the subtotal, inspect the item
     table again for omitted rows.
     - Do not add tax, service charge, or rounding as purchased items.
- 
+
     Return every required JSON-schema field.
     Return only the structured result.
- 
+
     OCR TEXT:
     ---BEGIN OCR---
     {raw_text}
     ---END OCR---
-    """ 
+    """
 
 
     try:
