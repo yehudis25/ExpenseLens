@@ -108,14 +108,35 @@ ExpenseLens was designed with privacy in mind.
 
 # 🚀 Getting Started
 
-### 1. Clone the Repository
+### 1. Configure Encryption Key
+
+ExpenseLens uses **Fernet encryption** to securely store uploaded receipt images.
+
+Create a `.streamlit/secrets.toml` file in your project:
+
+```toml
+ENCRYPTION_KEY = "your_generated_fernet_key_here"
+```
+
+Generate your own encryption key using Python:
+
+```bash
+python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+```
+
+Copy the generated key into `secrets.toml`.
+
+⚠️ **Important:** Never upload `.streamlit/secrets.toml` or share your encryption key publicly. Each deployment should use its own unique key.
+
+
+### 2. Clone the Repository
 
 ```bash
 git clone https://github.com/yehudis25/ExpenseLens.git
 cd ExpenseLens
 ```
 
-### 2. Create and Activate a Virtual Environment
+### 3. Create and Activate a Virtual Environment
 
 **Windows**
 ```bash
@@ -129,12 +150,12 @@ python3 -m venv .venv
 source .venv/bin/activate
 ```
 
-### 3. Install Dependencies
+### 4. Install Dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
-### 4. Install Tesseract OCR
+### 5. Install Tesseract OCR
 
 ExpenseLens uses **Tesseract OCR** to extract text from receipts.
 
@@ -226,7 +247,7 @@ pytesseract.pytesseract.tesseract_cmd = (
 )
 ```
 
-### 5. Install Ollama
+### 6. Install Ollama
 
 ExpenseLens uses Ollama to run the **Llama 3.2:1B** model locally.
 
@@ -242,13 +263,13 @@ https://ollama.com/download
 curl -fsSL https://ollama.com/install.sh | sh
 ```
 
-### 6. Pull the Required Model
+### 7. Pull the Required Model
 
 ```bash
 ollama pull llama3.2:1b
 ```
 
-### 7. Start the Ollama Server
+### 8. Start the Ollama Server
 
 In a separate terminal, run:
 
@@ -258,7 +279,7 @@ ollama serve
 
 Leave this terminal open while using ExpenseLens.
 
-### 8. Run the Streamlit App
+### 9. Run the Streamlit App
 
 In another terminal (with your virtual environment activated):
 
