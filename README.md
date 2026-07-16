@@ -159,8 +159,6 @@ curl -fsSL https://ollama.com/install.sh | sh
 
 ### 6. Pull the Required Model
 
-ExpenseLens uses the **Llama 3.2:1B** model.
-
 ```bash
 ollama pull llama3.2:1b
 ```
