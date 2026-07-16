@@ -141,6 +141,59 @@ ExpenseLens uses **Tesseract OCR** to extract text from receipts.
 - **Streamlit Community Cloud:** Tesseract is installed automatically using `packages.txt`/`pkgs.txt`.
 - **Local installation:** Install Tesseract OCR on your system and ensure it is available in your system PATH before running the application.
 
+#### Windows
+
+1. Download and install Tesseract OCR:
+
+https://github.com/UB-Mannheim/tesseract/wiki
+
+
+2. Add the Tesseract installation folder to your system PATH. The default installation location is usually:
+
+```text
+C:\Program Files\Tesseract-OCR
+```
+
+3. Restart your terminal and verify the installation:
+
+```bash
+tesseract --version
+```
+
+#### macOS
+
+1. Install Tesseract using Homebrew:
+
+```bash
+
+brew install tesseract
+```
+
+
+2. Verify the installation:
+
+```bash
+
+tesseract --version
+```
+
+
+#### Linux
+
+1. Install Tesseract using:
+
+```bash
+sudo apt update
+sudo apt install tesseract-ocr
+```
+
+2. Verify the installation:
+
+```bash
+
+tesseract --version
+```
+
 ### 5. Install Ollama
 
 ExpenseLens uses Ollama to run the **Llama 3.2:1B** model locally.
