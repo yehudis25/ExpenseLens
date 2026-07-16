@@ -143,9 +143,19 @@ ExpenseLens uses **Tesseract OCR** to extract text from receipts.
 
 ### 5. Install Ollama
 
+ExpenseLens uses Ollama to run the **Llama 3.2:1B** model locally.
+
+**Windows/macOS**
+
 Download and install Ollama from:
 
 https://ollama.com/download
+
+**Linux (including GitHub Codespaces)**
+
+```bash
+curl -fsSL https://ollama.com/install.sh | sh
+```
 
 ### 6. Pull the Required Model
 
