@@ -138,21 +138,44 @@ pip install -r requirements.txt
 
 ExpenseLens uses **Tesseract OCR** to extract text from receipts.
 
-- **Streamlit Community Cloud:** Tesseract is installed automatically using `packages.txt`/`pkgs.txt`.
-- **Local installation:** Install Tesseract OCR on your system and ensure it is available in your system PATH before running the application.
+Important:
+- `pytesseract` (listed in `requirements.txt`) is only a Python wrapper.
+- The actual **Tesseract OCR engine** must also be installed on the system.
+
+---
+
+### Streamlit Community Cloud
+
+If deploying to Streamlit Community Cloud, Tesseract is installed automatically using the `packages.txt` file included in this repository.
+
+No manual installation is required.
+
+---
+
+### Local Installation
+
+If running ExpenseLens on your own computer, install Tesseract OCR before starting the application.
 
 #### Windows
 
-1. Download and install Tesseract OCR:
+1. Download the Windows installer:
 
 https://github.com/UB-Mannheim/tesseract/wiki
 
+2. Install Tesseract using the default settings.
 
-2. Add the Tesseract installation folder to your system PATH. The default installation location is usually:
+The default installation folder is:
 
 ```text
 C:\Program Files\Tesseract-OCR
 ```
+3. Add Tesseract to your Windows PATH:
+- Open Start Menu
+- Search for: Environment Variables
+- Select Edit the system environment variables'
+- Under User variables, select Path
+- click edit and then new
+- Add: C:\Program Files\Tesseract-OCR
 
 3. Restart your terminal and verify the installation:
 
@@ -177,7 +200,6 @@ brew install tesseract
 tesseract --version
 ```
 
-
 #### Linux
 
 1. Install Tesseract using:
@@ -192,6 +214,16 @@ sudo apt install tesseract-ocr
 ```bash
 
 tesseract --version
+```
+
+#### If Tesseract is installed but ExpenseLens cannot find it, manually specify the executable path in utils/receipt_processor.py:
+
+```bash
+import pytesseract
+
+pytesseract.pytesseract.tesseract_cmd = (
+    r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+)
 ```
 
 ### 5. Install Ollama
