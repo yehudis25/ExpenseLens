@@ -6,5 +6,4 @@ ollama
 cryptography
 pdf2image
 plotly
-hashlib
 tesseract 
