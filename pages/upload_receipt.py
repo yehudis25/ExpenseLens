@@ -184,18 +184,52 @@ if image_input:
                     except (ValueError, SyntaxError):
                         st.warning("AI could not format items correctly.")
                         items_list = []
-
+                # Create DataFrame
                 df = pd.DataFrame(items_list)
                 df = df.drop(columns=["id", "pk", "item_id"], errors="ignore")  # hide primary keys
+                # Make sure required columns always exist
+                required_columns = ["name", "quantity", "price"]
 
-                if {"price", "quantity"}.issubset(df.columns):
-                    # Ensure price and quantity are treated as numbers (invalid values turn into NaN)
-                    df["price"] = pd.to_numeric(df["price"], errors="coerce")
-                    df["quantity"] = pd.to_numeric(df["quantity"], errors="coerce")
-                    
-                    df["subtotal"] = df["price"] * df["quantity"]
+                for col in required_columns:
+                    if col not in df.columns:
+                        if col == "quantity":
+                            df[col] = 1
+                        elif col == "price":
+                            df[col] = 0.0
+                        else:
+                            df[col] = ""
 
-                edited_df = st.data_editor(df,width="stretch")
+                # Keep columns in order
+                df = df[required_columns]
+
+                # Convert numeric columns
+                df["price"] = pd.to_numeric(df["price"], errors="coerce").fillna(0.0)
+                df["quantity"] = pd.to_numeric(df["quantity"], errors="coerce").fillna(1)
+
+                # Calculate subtotal
+                df["subtotal"] = df["price"] * df["quantity"]
+
+                # Editable table with Add/Delete Row support
+                edited_df = st.data_editor(
+                    df,
+                    width="stretch",
+                    hide_index=True,
+                    num_rows="dynamic"
+                )
+
+                # Recalculate subtotal after user edits
+                edited_df["price"] = pd.to_numeric(
+                    edited_df["price"], errors="coerce"
+                ).fillna(0.0)
+
+                edited_df["quantity"] = pd.to_numeric(
+                    edited_df["quantity"], errors="coerce"
+                ).fillna(1)
+
+                edited_df["subtotal"] = (
+                    edited_df["price"] * edited_df["quantity"]
+                )
+
                 items = edited_df.to_dict(orient="records")
 
             except Exception as e:
