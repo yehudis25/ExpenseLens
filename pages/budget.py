@@ -1,4 +1,17 @@
+hide_streamlit_style = """
+    <style>
+        /* Hide the hamburger menu */
+        #MainMenu {visibility: hidden;}
+
+        /* Hide the footer */
+        footer {visibility: hidden;}
+
+        /* Hide the sidebar */
+        section[data-testid="stSidebar"] {display: none !important;}
+    </style>
+"""
 import streamlit as st
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 from datetime import datetime
 from database.database import get_receipts
 import plotly.express as px
