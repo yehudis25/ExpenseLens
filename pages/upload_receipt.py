@@ -15,6 +15,7 @@ import streamlit as st
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 import pandas as pd
 import os
+from datetime import datetime 
 from PIL import UnidentifiedImageError
 from utils.receipt_processor import process_receipt, receipt_check, extract_raw_text
 from database.database import (
@@ -26,8 +27,6 @@ from database.database import (
 if "user_id" not in st.session_state:
     st.warning("Please login first")
     st.switch_page("app.py")
-
-
 
 st.markdown("""
 ### Welcome to ExpenseLens
@@ -155,10 +154,9 @@ if image_input:
 
             # Now run LLM extraction
             with st.spinner("Extracting structured data..."):
-                # st.session_state["receipt_data"] = process_receipt(image_input)
                 st.session_state["receipt_data"] = process_receipt(extracted_text)
 
-            st.success("Valid receipt detected! Extracting structured data...")
+                st.success("Valid receipt detected!")
 
             data = st.session_state["receipt_data"]
 
@@ -172,10 +170,20 @@ if image_input:
                 st.session_state["receipt_data"].get("store", "")
             )
 
-            date = st.text_input(
-                "Date",
-                st.session_state["receipt_data"].get("date", "")
-            )
+            str_date = st.session_state["receipt_data"].get("date", "")
+            default_date = None
+            # loop through valid date formats
+            for formats in ("%Y-%m-%d", "%d-%m-%Y", "%d/%m/%Y", "%Y/%m/%d", "%m/%d/%Y"):
+                try:
+                    default_date = datetime.strptime(str_date, formats).date()
+                    break
+                except (ValueError, TypeError):
+                    pass
+
+            if default_date:
+                date = st.date_input("Date", value=default_date)
+            else:
+                date = st.text_input("Date", value=str_date)
 
             total = st.number_input(
                 "Total",
@@ -197,18 +205,52 @@ if image_input:
                     except (ValueError, SyntaxError):
                         st.warning("AI could not format items correctly.")
                         items_list = []
-
+                # Create DataFrame
                 df = pd.DataFrame(items_list)
                 df = df.drop(columns=["id", "pk", "item_id"], errors="ignore")  # hide primary keys
+                # Make sure required columns always exist
+                required_columns = ["name", "quantity", "price"]
 
-                if {"price", "quantity"}.issubset(df.columns):
-                    # Ensure price and quantity are treated as numbers (invalid values turn into NaN)
-                    df["price"] = pd.to_numeric(df["price"], errors="coerce")
-                    df["quantity"] = pd.to_numeric(df["quantity"], errors="coerce")
-                    
-                    df["subtotal"] = df["price"] * df["quantity"]
+                for col in required_columns:
+                    if col not in df.columns:
+                        if col == "quantity":
+                            df[col] = 1
+                        elif col == "price":
+                            df[col] = 0.0
+                        else:
+                            df[col] = ""
 
-                edited_df = st.data_editor(df,width="stretch")
+                # Keep columns in order
+                df = df[required_columns]
+
+                # Convert numeric columns
+                df["price"] = pd.to_numeric(df["price"], errors="coerce").fillna(0.0)
+                df["quantity"] = pd.to_numeric(df["quantity"], errors="coerce").fillna(1)
+
+                # Calculate subtotal
+                df["subtotal"] = df["price"] * df["quantity"]
+
+                # Editable table with Add/Delete Row support
+                edited_df = st.data_editor(
+                    df,
+                    width="stretch",
+                    hide_index=True,
+                    num_rows="dynamic"
+                )
+
+                # Recalculate subtotal after user edits
+                edited_df["price"] = pd.to_numeric(
+                    edited_df["price"], errors="coerce"
+                ).fillna(0.0)
+
+                edited_df["quantity"] = pd.to_numeric(
+                    edited_df["quantity"], errors="coerce"
+                ).fillna(1)
+
+                edited_df["subtotal"] = (
+                    edited_df["price"] * edited_df["quantity"]
+                )
+
                 items = edited_df.to_dict(orient="records")
 
             except Exception as e:
@@ -254,10 +296,15 @@ if image_input:
                     st.error("Receipt information is missing. Please fill in store and date before saving.")
                     st.stop()
                 image_path = save_image(image_input, st.session_state["user_id"])
-                receipt = {
+            
+                if hasattr(date, "isoformat"):
+                    date_value = date.isoformat() # check if date object and convert to string
+                else: # date is string
+                    date_value = date
 
+                receipt = {
                     "store": store,
-                    "date": date,
+                    "date": date_value,
                     "total": total,
                     "items": items,
                     "notes": notes,
@@ -265,8 +312,6 @@ if image_input:
                     "category": category
                 }
                 st.session_state["receipt_data"] = receipt
-
-
 
                 try:
 
@@ -282,15 +327,12 @@ if image_input:
                     if receipt_id:
                         st.session_state.receipt_saved = True
                         st.success("Receipt saved permanently!")
-                    if receipt_id:
-                        st.session_state.receipt_saved = True
-                        st.session_state["show_saved_message"] = True
-                        st.rerun()
-
+                        print("SAVED")
                     else:
                         st.error(
                             "Could not save receipt."
                         )
+                        print("ERROR")
                 except Exception as e:
                     st.error(
                         "Database save failed"

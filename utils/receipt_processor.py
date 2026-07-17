@@ -1,54 +1,34 @@
-# import easyocr
 import ollama
-# import json
 import re
-# import numpy as np
 from PIL import Image, ImageEnhance, ImageFilter, ImageOps
 from pathlib import Path
 import streamlit as st
 import pytesseract
-# import torch
-# from transformers import pipeline
 from pydantic import BaseModel, Field, ValidationError
 from typing import List
-import hashlib
 
-# USE_GPU = torch.cuda.is_available()
-# DEVICE = 0 if USE_GPU else -1
+# @st.cache_resource(show_spinner="Loading OCR engine...")
+# def get_reader():
+#     import torch
+#     torch.set_num_threads(1)
+#     torch.set_num_interop_threads(1)
+#     image = Image.open(image_path)
+#     return pytesseract.image_to_string(image)
 
-@st.cache_resource(show_spinner="Loading OCR engine...")
-def get_reader():
-    import easyocr
-    import torch
-    torch.set_num_threads(1)
-    torch.set_num_interop_threads(1)
-    return easyocr.Reader(['en'], gpu=False, verbose=False,)
-
-# @st.cache_resource
-# def get_hf_pipeline():
-#     return pipeline(
-#         "image-to-text", 
-#         model="microsoft/trocr-base-printed", 
-#         device=DEVICE
-#     )
-
-def warm_llm():
-    try:
-        ollama.generate(
-            model="llama3.2:1b",
-            prompt="ping",
-            options={"num_predict": 1}
-        )
-    except Exception as e:
-        print(f"LLM warming skipped or failed: {e}")
+# load model
+# def warm_llm():
+#     try:
+#         ollama.generate(
+#             model="llama3.2:1b",
+#             prompt="ping",
+#             options={"num_predict": 1}
+#         )
+#     except Exception as e:
+#         print(f"LLM warming skipped or failed: {e}")
 
 # warm_llm()
 
 def receipt_check(text: str) -> bool:
-    """
-    Very simple keyword-based receipt/invoice detector.
-    Works even with messy OCR.
-    """
     if not text:
         return False
 
@@ -62,8 +42,9 @@ def receipt_check(text: str) -> bool:
 
     invoice_keywords = ["invoice", "bill to", "ship to", "due date", "invoice number","balance due", "amount due"]
 
-    # If any receipt or invoice keyword appears → treat as valid
+    # If any receipt or invoice keyword appears - valid receipt
     return any(k in text_lower for k in receipt_keywords + invoice_keywords)
+
 # prevent duplicate reciept from being uploaded
 def prevent_duplicate_receipt_by_text(raw_text):
     if "receipt_texts" not in st.session_state:
@@ -76,42 +57,36 @@ def prevent_duplicate_receipt_by_text(raw_text):
         st.stop()
     else:
         st.session_state.receipt_texts.add(normalized)
-        st.success("✅ New receipt uploaded successfully.")
+
 
 
 def extract_raw_text(image_input) -> str:
     try:
-        if isinstance(image_input, (str, Path)):
+        # Check if image_input is of type string  (for sample images) or Path 
+        if isinstance(image_input, (str, Path)): 
             image = Image.open(image_input)
-        elif hasattr(image_input, "read"):
-            image_input.seek(0)
+        # Check if uploaded file or camera photo
+        elif hasattr(image_input, "read"): 
+            image_input.seek(0) # read from beginning of file
             image = Image.open(image_input)
-        elif isinstance(image_input, Image.Image):
+        elif isinstance(image_input, Image.Image): # if image was already opened reload it
             image = image_input
         else:
-            raise TypeError(
-                f"Unsupported image input: {type(image_input).__name__}"
-            )
-
+            raise TypeError(f"Unsupported image input: {type(image_input).__name__}")
+        # Make sure rotation is correct and specify pixel types for Tessract
         image = ImageOps.exif_transpose(image).convert("RGB")
 
-        # Avoid processing unnecessarily large images.
-        image.thumbnail(
-            (1800, 1800),
-            Image.Resampling.LANCZOS,
-        )
+        # Reduce image size if large and use LANZOS for defining reduced pixels
+        image.thumbnail((1800, 1800), Image.Resampling.LANCZOS)
 
-        # Improve receipt contrast.
+        # Improve receipt contrast for better extraction
         image = ImageOps.grayscale(image)
         image = ImageEnhance.Contrast(image).enhance(1.8)
         image = image.filter(ImageFilter.SHARPEN)
 
-        text = pytesseract.image_to_string(
-            image,
-            lang="eng",
-            config="--oem 3 --psm 6",
-            timeout=30,
-        )
+        # Perform OCR
+        text = pytesseract.image_to_string(image, lang="eng",config="--oem 3 --psm 6",
+            timeout=30) 
 
         return text.strip()
 
@@ -120,7 +95,8 @@ def extract_raw_text(image_input) -> str:
             f"Tesseract OCR timed out: {exc}") from exc
     except Exception as exc:
         raise RuntimeError(f"Tesseract OCR failed: {exc}") from exc
-# Pydantic models
+        
+# Pydantic models for receipt
 class Item(BaseModel):
     name: str = Field(default="")
     price: float = Field(default=0.0)
@@ -131,151 +107,96 @@ class Receipt(BaseModel):
     total: float = Field(default=0.0)
     items: List[Item] = Field(default_factory=list)
 
-# def structure_text_with_llm(raw_text: str) -> dict:
-#     """
-#     Sends OCR text to Llama and safely extracts valid JSON.
-#     Repairs common LLL formatting issues before json.loads().
-#     """
-#     prompt = """
-#     You are an extraction assistant for the ExpenseLens app.
-#     Your job is to extract structured receipt data from messy OCR text.
 
-#     ### REQUIRED FIELDS
-#     - store: string (never blank)
-#     - date: string (never blank)
-#     - total: number (never blank)
-#     - items: list of objects with:
-#         - name: string
-#         - price: number
-
-#     ### EXTRACTION RULES
-#     1. If the OCR text contains item lines (e.g., "Milk 3.99"), extract them.
-#     2. If item names are missing, infer them from context (e.g., "Item 1").
-#     3. If prices appear without names, still create an item with a placeholder name.
-#     4. If store or date are missing, infer reasonable placeholders:
-#         - store: "Unknown Store"
-#         - date: "Unknown Date"
-#     5. If total is missing, sum item prices.
-
-#     ### OUTPUT FORMAT
-#     Return ONLY valid JSON in this exact structure:
-
-#     {
-#     "store": "",
-#     "date": "",
-#     "total": 0,
-#     "items": [
-#         {
-#         "name": "",
-#         "price": 0
-#         }
-#     ]
-#     }
-
-#     OCR Text:
-#     """ + raw_text
-
-#     try:
-#         response = ollama.generate(
-#             model='llama3.2:1b',
-#             prompt=prompt,
-#             options={"temperature": 0.0, "num_predict": 512}
-#         )
-
-#         raw = response["response"].strip()
-
-#         # Extract the first JSON object
-#         match = re.search(r"\{.*\}", raw, re.DOTALL)
-#         if not match:
-#             raise ValueError("No JSON object found in model output")
-
-#         json_text = match.group(0)
-
-#         # Remove trailing backslashes that break JSON
-#         json_text = re.sub(r"\\\s*$", "", json_text, flags=re.MULTILINE)
-#         json_text = json_text.replace('\\"', '"')
-#         print("RAW MODEL OUTPUT:")
-#         print(raw)
-#         data = json.loads(json_text)
-
-#         # pydantic validation
-#         validated = Receipt(**data)
-#         return validated.model_dump()
-
-#     except Exception as e:
-#         print("=" * 50)
-#         print("DEBUG ERROR:", repr(e))
-#         print("DEBUG RAW RESPONSE:", raw if 'raw' in locals() else "No response")
-#         print("=" * 50)
-
-#         return {
-#             "store": "Parsing Failure",
-#             "date": "Unknown Date",
-#             "total": 0.0,
-#             "items": "Could not format receipt data cleanly."
-#         }
 def structure_text_with_llm(raw_text: str) -> dict:
+    # Use API to connect to ollama server
     client = ollama.Client(
         host="http://127.0.0.1:11434",
         timeout=120,)
 
-    # Avoid sending unnecessarily large or repeated OCR output.
+    # Reduce amount of text sent to model to speed up processing
     raw_text = raw_text[:8000]
 
     prompt = f"""
-You are an extraction assistant for the ExpenseLens app.
-Your job is to extract structured receipt data from messy OCR text.
+    Extract structured purchase data from the OCR text.
 
-### REQUIRED FIELDS
-- store: string (never blank)
-- date: string (never blank)
-- total: number (never blank)
-- items: list of objects with:
-    - name: string
-    - price: number
+    DOCUMENT FIELDS
 
-### EXTRACTION RULES
-1. If the OCR text contains item lines (e.g., "Milk 3.99"), extract them.
-2. If item names are missing, infer them from context (e.g., "Item 1").
-3. If prices appear without names, still create an item with a placeholder name.
-4. If store or date are missing, infer reasonable placeholders:
-    - store: "Unknown Store"
-    - date: "Unknown Date"
-5. If total is missing, sum item prices.
+    store:
+    - The merchant or company issuing the receipt.
+    - Usually appears in the first few lines.
+    - Do not use the customer, cashier, server, address, or tax heading.
 
-### OUTPUT FORMAT
-Return ONLY valid JSON in this exact structure — do NOT include explanations, markdown, or code fences:
+    date:
+    - The transaction, receipt, or invoice date.
+    - Return YYYY-MM-DD when the day and month can be determined.
+    - Do not use an order number, invoice number, or tax number.
 
-{{
-"store": "Unknown Store",
-"date": "Unknown Date",
-"total": 0.0,
-"items": [
-    {{
-    "name": "",
-    "price": 0
-    }}
-]
-}}
+    total:
+    - The final amount paid or payable.
+    - Prefer labels in this order:
+    1. GRAND TOTAL, TOTAL DUE, BALANCE DUE, or the final prominent TOTAL
+    2. Total inclusive of tax
+    3. Total
+    - Do not use subtotal, excluding-tax total, service charge, tax,
+    rounding adjustment, unit price, or an individual item total.
 
-### OCR TEXT TO PARSE
-{raw_text}
+    ITEM EXTRACTION
 
-### INSTRUCTIONS
-Now extract and return ONLY the JSON object.
-"""
+    Locate the receipt's item table. It usually begins with headings
+    similar to:
+
+    Description | Quantity | Unit price | Line total | Tax
+
+    Extract every purchased item between the table heading and the
+    first summary line such as subtotal, total, tax, service charge,
+    rounding, balance due, cash, or change.
+
+    Rules:
+    - Process the item table from its first row through its last row.
+    - Do not stop after extracting only the first few items.
+    - Produce one output item for every item-code/description row.
+    - Item codes such as B1, T2, R5, SB01, and SB02 indicate the
+    beginning of separate purchased items.
+    - Join wrapped description, quantity, and price lines belonging
+    to the same item.
+    - name must contain the complete product description.
+    - Remove the item code from the name when possible.
+    - quantity is the purchased quantity; use 1 only when absent.
+    - price is the LINE TOTAL, not the unit price.
+    - If quantity, unit price, and line total exist, verify that:
+    quantity × unit price approximately equals line total.
+    - Never create an item without a meaningful alphabetic name.
+    - Never create an item from a number alone.
+
+    RECONCILIATION
+
+    - When a subtotal or "Total excluding tax" exists, the sum of all
+    extracted item line totals should approximately equal it.
+    - If the item sum is smaller than the subtotal, inspect the item
+    table again for omitted rows.
+    - Do not add tax, service charge, or rounding as purchased items.
+
+    Return every required JSON-schema field.
+    Return only the structured result.
+
+    OCR TEXT:
+    ---BEGIN OCR---
+    {raw_text}
+    ---END OCR---
+    """
 
     try:
         print("Starting structured extraction...", flush=True)
-
+        # Send request to llama to return json 
         response = client.generate(
             model="llama3.2:1b",
             prompt=prompt,
             format=Receipt.model_json_schema(),
             options={
                 "temperature": 0,
-                "num_predict": 256,
-                "num_ctx": 2048,
+                "num_predict": 1024,
+                "num_ctx": 4096,
             },
             keep_alive="5m",
         )
@@ -286,18 +207,14 @@ Now extract and return ONLY the JSON object.
         print(raw_response, flush=True)
         
         print("OCR characters sent:", len(raw_text), flush=True)
-        print("OCR preview:", raw_text[:300], flush=True)
+        print("OCR preview:", raw_text[:800], flush=True)
+        # Validate response with pydantic models
         validated = Receipt.model_validate_json(raw_response)
 
-        # validated = Receipt.model_validate_json(
-        #     response["response"]
-        # )
-
-        return validated.model_dump()
+        return validated.model_dump() # converts object to dictionary
 
     except Exception as exc:
         print(f"Structured extraction failed: {exc}", flush=True)
-
         return {
             "store": "Parsing Failure",
             "date": "Uknown",
@@ -306,14 +223,5 @@ Now extract and return ONLY the JSON object.
         }
 
 def process_receipt(raw_text: str):
-    """
-    Core Pipeline Orchestration: Chains the conversion steps together sequentially.
-    # """
-    # if image is None:
-    #     return {"store": "", "date": "", "total": 0.0, "items": ""}
-
-    # raw_text = extract_raw_text(image)
-    # st.write("OCR Text:")
-    # st.code(raw_text)
     prevent_duplicate_receipt_by_text(raw_text)
     return structure_text_with_llm(raw_text)
