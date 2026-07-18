@@ -143,7 +143,7 @@ if image_input:
         if "receipt_data" not in st.session_state:
 
             # First extract text
-            with st.spinner("Analyzing document..."):
+            with st.spinner("Uploading receipt..."):
                 print("STEP 1")
                 extracted_text = extract_raw_text(image_input)
                 print("STEP 2")
@@ -153,7 +153,7 @@ if image_input:
                 st.stop()
 
             # Now run LLM extraction
-            with st.spinner("Extracting structured data..."):
+            with st.spinner("Uploading receipt..."):
                 st.session_state["receipt_data"] = process_receipt(extracted_text)
 
                 st.success("Valid receipt detected!")
