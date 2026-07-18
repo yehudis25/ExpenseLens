@@ -19,10 +19,8 @@ def receipt_check(text: str) -> bool:
         "item", "qty", "quantity", "price"
     ]
 
-    invoice_keywords = ["invoice", "bill to", "ship to", "due date", "invoice number","balance due", "amount due"]
-
-    # If any receipt or invoice keyword appears then it is a valid receipt/invoice
-    return any(k in text_lower for k in receipt_keywords + invoice_keywords)
+    # If any receipt  keyword appears then it is a valid receipt
+    return any(k in text_lower for k in receipt_keywords)
 
 # Prevent duplicate reciept from being uploaded
 def prevent_duplicate_receipt_by_text(raw_text):
@@ -145,9 +143,9 @@ def structure_text_with_llm(raw_text: str) -> dict:
     - Do not use the customer, cashier, server, address, or tax heading.
 
     date:
-    - The transaction, receipt, or invoice date.
+    - The transaction or receipt date.
     - Return YYYY-MM-DD when the day and month can be determined.
-    - Do not use an order number, invoice number, or tax number.
+    - Do not use an order number or tax number.
 
     total:
     - Return the final amount paid or payable.
