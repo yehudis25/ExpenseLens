@@ -1,4 +1,4 @@
-# 🧾 ExpenseLens AI — Smart Receipt & Invoice Tracker
+# 🧾 ExpenseLens AI — Smart Receipt Tracker
 
 ![Python](https://img.shields.io/badge/Python-3.10+-blue)
 ![Streamlit](https://img.shields.io/badge/Frontend-Streamlit-red)
@@ -11,9 +11,9 @@
 
 ## Overview
 
-ExpenseLens AI is an intelligent receipt and invoice management system designed for freelancers, small business owners, and anyone looking for an easier way to organize and track expenses.
+ExpenseLens AI is an intelligent receipt management system designed for freelancers, small business owners, and anyone looking for an easier way to organize and track expenses.
 
-Instead of manually entering purchase information, users simply upload a receipt or invoice. The application extracts the text using **Tesseract OCR** and then uses a locally running **Llama 3.2:1B** model through **Ollama** to convert the text into structured expense data.
+Instead of manually entering purchase information, users simply upload a receipt. The application extracts the text using **Tesseract OCR** and then uses a locally running **Llama 3.2:1B** model through **Ollama** to convert the text into structured expense data.
 
 The extracted data is validated using **Pydantic** before being presented to the user for review and editing.
 
@@ -25,8 +25,8 @@ Because all AI processing is performed locally, receipt data never needs to be s
 
 ## ✨ Features
 
-### 📷 Receipt & Invoice Upload
-- Upload receipt images and invoice files
+### 📷 Receipt Upload
+- Upload receipt image files
 - Supports common image formats
 - Stores uploaded files securely
 - Detects duplicate receipt uploads using OCR text comparison
@@ -96,7 +96,7 @@ ExpenseLens was designed with privacy in mind.
 ---
 # 🔄 How It Works
 
-1. User uploads a receipt or invoice.
+1. User uploads a receipt.
 2. The image is automatically converted to grayscale, sharpened, and enhanced for improved OCR accuracy.
 3. Tesseract OCR extracts the text from the image.
 4. Llama 3.2:1B (running locally through Ollama) converts the OCR text into structured expense information.
