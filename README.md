@@ -106,6 +106,15 @@ ExpenseLens was designed with privacy in mind.
 
 ---
 
+## 🔐 Test Login (Demo Account)
+
+To try ExpenseLens without creating an account, use the demo login:
+
+**Username:** tester  
+**Password:** testing123
+
+This account is preloaded with sample receipts so you can explore the app’s features immediately.
+
 # 🚀 Getting Started
 
 ### 1. Configure Encryption Key

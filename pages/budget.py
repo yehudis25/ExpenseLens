@@ -13,7 +13,7 @@ hide_streamlit_style = """
 import streamlit as st
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 from datetime import datetime
-from database.database import get_receipts
+from database.database import get_receipts, get_user_budget, update_user_budget
 import plotly.express as px
 import pandas as pd
 
@@ -21,18 +21,26 @@ st.set_page_config(page_title="Budget Overview", page_icon="💰")
 
 st.title("💰 Budget Management")
 
-if "budget" not in st.session_state:
-    st.session_state.budget = 500.0
+user_id = st.session_state.get("user_id")  # however you store logged-in user
+
+# Load user-specific budget
+budget = get_user_budget(user_id)
 
 # Budget input
-budget = st.number_input(
+new_budget = st.number_input(
     "Set your monthly budget ($)",
     min_value=0.0,
     step=10.0,
-    key="budget"
+    value=budget
 )
 
-receipts = get_receipts()
+# Save if changed
+if new_budget != budget:
+    update_user_budget(user_id, new_budget)
+    budget = new_budget
+
+
+receipts = get_receipts(user_id)
 current_month_str = datetime.now().strftime("%Y-%m")
 monthly_receipts = []
 total_spent = 0.0

@@ -205,7 +205,26 @@ def get_receipts(user_id=None):
 
     return decrypted_rows
 
+# budget
+def get_user_budget(user_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+    row = cursor.execute(
+        "SELECT budget FROM users WHERE id=?",
+        (user_id,)
+    ).fetchone()
+    conn.close()
+    return row[0] if row else 500.0
 
+def update_user_budget(user_id, new_budget):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "UPDATE users SET budget=? WHERE id=?",
+        (new_budget, user_id)
+    )
+    conn.commit()
+    conn.close()
 
 
 def delete_receipt(receipt_id):
