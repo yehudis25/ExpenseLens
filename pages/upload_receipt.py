@@ -343,4 +343,5 @@ if st.button("View Receipts"):
     st.switch_page("pages/summary.py")
 if st.button("View Budget Overview"):
     st.switch_page("pages/budget.py")
-
+ if st.button("Submit Feedback"):
+        st.switch_page("pages/feedback.py")
