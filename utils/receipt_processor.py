@@ -210,7 +210,6 @@ def structure_text_with_llm(raw_text: str) -> dict:
     """
 
     try:
-        extraction...", flush=True)
         # Send request to llama to return json 
         response = client.generate(
             model="llama3.2:1b",
