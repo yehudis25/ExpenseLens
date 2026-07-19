@@ -69,9 +69,6 @@ def clean_receipt_ocr(raw_text: str) -> str:
     # Fix OCR error of incorrect extraction of 'S'
     text = re.sub(r"\$(?=[A-Za-z]+)", "S", text)
 
-    print("CORRECTED TEXT")
-    print(text, flush=True)
-
     return text
 
 def extract_raw_text(image_input) -> str:
@@ -126,7 +123,7 @@ class Receipt(BaseModel):
 
 def structure_text_with_llm(raw_text: str) -> dict:
     # Use API to connect to ollama server
-    client = ollama.Client(host="http://127.0.0.1:11434", timeout=120,)
+    client = ollama.Client(host="http://127.0.0.1:11434", timeout=120)
 
     # Reduce amount of text sent to model to speed up processing
     raw_text = clean_receipt_ocr(raw_text)
@@ -213,7 +210,7 @@ def structure_text_with_llm(raw_text: str) -> dict:
     """
 
     try:
-        print("Starting structured extraction...", flush=True)
+        extraction...", flush=True)
         # Send request to llama to return json 
         response = client.generate(
             model="llama3.2:1b",
@@ -228,17 +225,13 @@ def structure_text_with_llm(raw_text: str) -> dict:
         )
 
         raw_response = response["response"]
-        print("RAW STRUCTURED RESPONSE:", flush=True)
-        print(raw_response, flush=True)
-        # print("OCR characters sent:", len(raw_text), flush=True)
-        # print("OCR preview:", raw_text[:800], flush=True)
+
         # Validate response with pydantic models
         validated = Receipt.model_validate_json(raw_response)
 
         return validated.model_dump() # converts object to dictionary
 
     except Exception as exc:
-        print(f"Structured extraction failed: {exc}", flush=True)
         return {
             "store": "Parsing Failure",
             "date": "Uknown",

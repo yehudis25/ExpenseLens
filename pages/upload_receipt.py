@@ -144,9 +144,7 @@ if image_input:
 
             # First extract text
             with st.spinner("Uploading receipt..."):
-                print("STEP 1")
                 extracted_text = extract_raw_text(image_input)
-                print("STEP 2")
             if not receipt_check(extracted_text):
                 st.error("This does not appear to be a receipt.")
                 st.stop()
@@ -326,12 +324,10 @@ if image_input:
                     if receipt_id:
                         st.session_state.receipt_saved = True
                         st.success("Receipt saved permanently!")
-                        print("SAVED")
                     else:
                         st.error(
                             "Could not save receipt."
                         )
-                        print("ERROR")
                 except Exception as e:
                     st.error(
                         "Database save failed"
