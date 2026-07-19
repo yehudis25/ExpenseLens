@@ -26,7 +26,7 @@ if receipt_data is None:
     st.warning("No receipt loaded")
     st.stop()
 
-st.title("🧾 Invoice / Receipt Detail")
+st.title("🧾Receipt Detail")
 
 col1, col2 = st.columns(2)
 

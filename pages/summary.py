@@ -245,7 +245,7 @@ if st.session_state.default_display:
     #         rows = filter_for_month(most_recent_date.year, most_recent_date.month)
     #         st.write(f"Most recent receipts from {most_recent_date.strftime("%B")} {most_recent_date.year}")
     else: # if there are no receipts then show relevant message
-        st.write("No invoices or receipts have been uploaded")
+        st.write("No receipts have been uploaded")
     st.session_state.display_receipts = rows 
 
 # Build dataframe
