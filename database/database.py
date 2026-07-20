@@ -40,7 +40,6 @@ def create_tables():
             )
             """
         )
-        
         # Feedback table
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS feedback (
@@ -56,9 +55,20 @@ def create_tables():
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT UNIQUE,
-            password TEXT
+            password TEXT,
+            budget REAL DEFAULT 500.0
         )
         """)
+        # Add budget column for older databases
+        user_columns = {
+            row[1]
+            for row in cursor.execute("PRAGMA table_info(users)").fetchall()
+        }
+
+        if "budget" not in user_columns:
+            cursor.execute(
+                "ALTER TABLE users ADD COLUMN budget REAL DEFAULT 500.0"
+            )
 
         columns = {
             row[1]
@@ -178,7 +188,7 @@ def get_receipts(user_id=None):
     decrypted_rows = []
     
     for row in rows:
-        raw_category = row[9]
+        raw_category = row[8]
 
         if raw_category:
             try:

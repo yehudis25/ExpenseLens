@@ -286,6 +286,7 @@ if image_input:
 
             # save data from receipt
             if saved:
+                st.session_state["category"] = category
                 if st.session_state.receipt_saved:
                     st.warning("This receipt has already been saved.")
                     st.stop()
@@ -306,12 +307,13 @@ if image_input:
                     "items": items,
                     "notes": notes,
                     "image_path": image_path,
-                    "category": category
+                    "category": st.session_state["category"]
                 }
                 st.session_state["receipt_data"] = receipt
 
                 try:
-
+                    st.write("Selected category:", category)
+                    st.write("Saved category:", receipt["category"])
                     receipt_id = save_receipt(
                         data=receipt,
                         image_path=image_path,
