@@ -1,5 +1,18 @@
 # page with details of receipt
+hide_streamlit_style = """
+    <style>
+        /* Hide the hamburger menu */
+        #MainMenu {visibility: hidden;}
+
+        /* Hide the footer */
+        footer {visibility: hidden;}
+
+        /* Hide the sidebar */
+        section[data-testid="stSidebar"] {display: none !important;}
+    </style>
+"""
 import streamlit as st
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 import os
 from io import BytesIO
 from PIL import Image
@@ -13,7 +26,7 @@ if receipt_data is None:
     st.warning("No receipt loaded")
     st.stop()
 
-st.title("🧾 Invoice / Receipt Detail")
+st.title("🧾Receipt Detail")
 
 col1, col2 = st.columns(2)
 

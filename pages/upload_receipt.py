@@ -1,7 +1,21 @@
 # module for startup page - where user uploades and edits receipts
+hide_streamlit_style = """
+    <style>
+        /* Hide the hamburger menu */
+        #MainMenu {visibility: hidden;}
+
+        /* Hide the footer */
+        footer {visibility: hidden;}
+
+        /* Hide the sidebar */
+        section[data-testid="stSidebar"] {display: none !important;}
+    </style>
+"""
 import streamlit as st
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 import pandas as pd
 import os
+from datetime import datetime 
 from PIL import UnidentifiedImageError
 from utils.receipt_processor import process_receipt, receipt_check, extract_raw_text
 from database.database import (
@@ -13,8 +27,6 @@ from database.database import (
 if "user_id" not in st.session_state:
     st.warning("Please login first")
     st.switch_page("app.py")
-
-
 
 st.markdown("""
 ### Welcome to ExpenseLens
@@ -131,21 +143,17 @@ if image_input:
         if "receipt_data" not in st.session_state:
 
             # First extract text
-            with st.spinner("Analyzing document..."):
-                print("STEP 1")
+            with st.spinner("Uploading receipt..."):
                 extracted_text = extract_raw_text(image_input)
-                print("STEP 2")
-            # Run LLM validator OUTSIDE spinner
             if not receipt_check(extracted_text):
-                st.error("This does not appear to be a receipt or invoice.")
+                st.error("This does not appear to be a receipt.")
                 st.stop()
 
             # Now run LLM extraction
-            with st.spinner("Extracting structured data..."):
-                # st.session_state["receipt_data"] = process_receipt(image_input)
+            with st.spinner("Processing receipt..."):
                 st.session_state["receipt_data"] = process_receipt(extracted_text)
 
-            st.success("Valid receipt detected! Extracting structured data...")
+                st.success("Valid receipt detected!")
 
             data = st.session_state["receipt_data"]
 
@@ -159,10 +167,20 @@ if image_input:
                 st.session_state["receipt_data"].get("store", "")
             )
 
-            date = st.text_input(
-                "Date",
-                st.session_state["receipt_data"].get("date", "")
-            )
+            str_date = st.session_state["receipt_data"].get("date", "")
+            default_date = None
+            # loop through valid date formats
+            for formats in ("%Y-%m-%d", "%d-%m-%Y", "%d/%m/%Y", "%Y/%m/%d", "%m/%d/%Y"):
+                try:
+                    default_date = datetime.strptime(str_date, formats).date()
+                    break
+                except (ValueError, TypeError):
+                    pass
+
+            if default_date:
+                date = st.date_input("Date", value=default_date)
+            else:
+                date = st.text_input("Date", value=str_date)
 
             total = st.number_input(
                 "Total",
@@ -275,10 +293,15 @@ if image_input:
                     st.error("Receipt information is missing. Please fill in store and date before saving.")
                     st.stop()
                 image_path = save_image(image_input, st.session_state["user_id"])
-                receipt = {
+            
+                if hasattr(date, "isoformat"):
+                    date_value = date.isoformat() # check if date object and convert to string
+                else: # date is string
+                    date_value = date
 
+                receipt = {
                     "store": store,
-                    "date": date,
+                    "date": date_value,
                     "total": total,
                     "items": items,
                     "notes": notes,
@@ -286,8 +309,6 @@ if image_input:
                     "category": category
                 }
                 st.session_state["receipt_data"] = receipt
-
-
 
                 try:
 
@@ -303,11 +324,6 @@ if image_input:
                     if receipt_id:
                         st.session_state.receipt_saved = True
                         st.success("Receipt saved permanently!")
-                    if receipt_id:
-                        st.session_state.receipt_saved = True
-                        st.session_state["show_saved_message"] = True
-                        st.rerun()
-
                     else:
                         st.error(
                             "Could not save receipt."
@@ -323,4 +339,5 @@ if st.button("View Receipts"):
     st.switch_page("pages/summary.py")
 if st.button("View Budget Overview"):
     st.switch_page("pages/budget.py")
-
+if st.button("Submit Feedback"):
+    st.switch_page("pages/feedback.py")
