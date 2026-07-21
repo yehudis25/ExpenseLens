@@ -117,7 +117,6 @@ To try ExpenseLens without creating an account, use the demo login:
 
 This account is preloaded with sample receipts so you can explore the app’s features immediately.
 
-**Note:** Some of the sample receipt images were saved in the original GitHub Codespaces environment. If you run the app on your own computer, those images may not be available, so you may see "Image not found" for some sample receipts. This only affects those sample images. All other features of the app work as expected. You can upload your own receipt to test the image feature.
 
 # 🚀 Getting Started
 

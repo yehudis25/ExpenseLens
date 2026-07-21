@@ -8,3 +8,7 @@ __pycache__/
 ollama.log
 
 .ipynb_checkpoints/
+
+# Virtual environments
+.venv/
+venv/

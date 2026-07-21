@@ -9,7 +9,7 @@ PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 DB_PATH = os.path.join(PROJECT_DIR, "expense_lens.db")
 # folder for receipts
-UPLOAD_FOLDER = os.path.join(PROJECT_DIR, "uploads", "receipts")
+UPLOAD_FOLDER = os.path.join(PROJECT_DIR, "data", "receipts")
 
 # connect to dtbs
 def get_connection():

@@ -36,8 +36,10 @@ with col1:
 
     image_path = receipt_data.get("image_path")
 
+    PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
     if image_path and not os.path.isabs(image_path):
-        image_path = os.path.join("/workspaces/ExpenseLens", image_path)
+        image_path = os.path.join(PROJECT_DIR, image_path)
 
     if image_path and os.path.exists(image_path):
         with open(image_path, "rb") as f:
