@@ -112,20 +112,7 @@ def search_receipts(selected):
                 "created_at": receipt[9]
             }
     return None
-    #     for r in st.session_state.all_receipts:
-    #     if r[2]==selected[0] and r[4]==selected[1] and r[3]==selected[2]:
-    #         print(selected[4])
-    #         receipt= r
-    # return [receipt for receipt in st.session_state.all_receipts if receipt[0]==selected_id]
-    # if receipt:
-    #     return { # just for now - will add id in data to use to search for row and send to screen
-    #     "store": receipt[2],#name
-    #     "date":  receipt[3],#date,
-    #     "total": receipt[4],#cost,
-    #     "items": receipt[5],
-    #     "notes": receipt[6],
-    #     "image_path": receipt[7] #(id, user_id, store, date, total, items, notes, image_path, created_at)
-    #     }
+
 
 curr = currency()
 # manage default display and rows for filtering 
@@ -150,13 +137,9 @@ min_cost = None
 max_cost = None
 
 # Filter options
-# filter_store_option = st.checkbox("Filter by store")
-# if filter_store_option:
-  # show all unique store names as well as 'Select store' in dropdown
+# show all unique store names as well as 'Select store' in dropdown
 user_store= st.multiselect("Select a store",  list(set(receipt[1] for receipt in st.session_state.all_receipts)))
 print(user_store)
-# filter_cost_option = st.checkbox("Filter by cost")
-# if filter_cost_option:
 cost_filters = st.selectbox("Select cost range", ["All costs", f"Under {curr}50", f"{curr}50-{curr}250", f"{curr}250-{curr}750", f"Over {curr}750", "Custom"])
 if cost_filters == f"Under {curr}50":
     min_cost = 0.1
@@ -174,8 +157,6 @@ elif cost_filters == "Custom":
     min_cost = st.number_input("Enter minimum cost", min_value=1, max_value=2000000, step=1, value=80)
     max_cost = st.number_input("Enter maximum cost", min_value=1, max_value=2000000, step=1, value=300)
 
-# filter_date_option = st.checkbox("Filter by date")
-# if filter_date_option:
 date_filters = st.selectbox("Select date range", ["All dates","Current month", "Last 6 months", "Current year", "Custom range"])
 today = date.today()
 if date_filters == "Current month":
@@ -197,7 +178,6 @@ elif date_filters == "Custom range":
     end_date = st.date_input("Select ending date")
 
 # Button to implement filtering
-# if filter_cost_option or filter_date_option or filter_store_option:
 if user_store != [] or date_filters != "All dates" or cost_filters != "All costs":
   btn_filter = st.button(f"Filter receipts")
   if btn_filter:
@@ -214,8 +194,6 @@ if user_store != [] or date_filters != "All dates" or cost_filters != "All costs
     st.session_state.display_receipts = rows_to_search # receipts to display to user
 
     if len(st.session_state.display_receipts) == 0: # if no reciepts fit filtering conditions, check for user input errors
-        # if (user_store == "Select store"):
-        #     st.error("Please select a store")
         if (start_date and start_date>end_date): # check if invalid date range
             st.error("Start date is after end date - please enter valid date range")
         elif(end_date and end_date>date.today()):
@@ -234,16 +212,9 @@ rows = st.session_state.display_receipts
 
 # if no filtering, show receipts from most recent month
 if st.session_state.default_display:
-    # rows = filter_for_month(date.today().year, date.today().month) # find receipts from current month
     rows = extract_data()
     if (len(rows)>0): # if there are receipts from current month display relevant message 
-        # st.write(f"Receipts from {date.today().strftime("%B")}")
         st.write("All receipts")
-    # else: # otherwise find receipts from most recent month and year
-    #     if st.session_state.all_receipts:
-    #         most_recent_date = st.session_state.all_receipts[0][0]
-    #         rows = filter_for_month(most_recent_date.year, most_recent_date.month)
-    #         st.write(f"Most recent receipts from {most_recent_date.strftime("%B")} {most_recent_date.year}")
     else: # if there are no receipts then show relevant message
         st.write("No receipts have been uploaded")
     st.session_state.display_receipts = rows 
@@ -252,7 +223,6 @@ if st.session_state.default_display:
 st.session_state.df = pd.DataFrame([row[:3] for row in st.session_state.display_receipts], columns=["Date", "Store", "Total Cost"])
 st.session_state.df.index =  range(1, len(st.session_state.df)+1)
 df = st.session_state.df
-
 
 # show receipts
 st.data_editor(st.session_state.df, disabled=True, column_config ={"Total Cost": st.column_config.NumberColumn("Total Cost", format = f"{curr} %.2f")})
